@@ -536,6 +536,8 @@
      않고 그대로 유지.
 - **상태**: 완료. 커밋&푸쉬 승인 대기.
 
+### README.md 작성
+
 - **목표**: 프로젝트 소개, 설치(개발 의존성 포함), 실행 방법(`python main.py [--db]`),
   테스트 실행 방법(`pytest`), 프로젝트 구조, 메인 메뉴 사용법을 담은 README.md 신규 작성.
 - **TDD 해당 없음**: 문서 작성이므로 SKILL.md의 "설정 파일/문서" 예외에 해당. RED/GREEN
@@ -545,6 +547,52 @@
   사용 흐름, 테스트/린트 명령, 프로젝트 구조, 데이터 영속성 관련 알려진 제한사항).
 - **커밋**: 완료. 사람 파트너 지시로 `README.md`만 먼저 `[DOCS]` 커밋(789067f)&푸쉬,
   `Plan.md`는 별도 커밋으로 뒤이어 반영.
+
+## 진행 중 (Active)
+
+### 버그 발견: 생산 큐가 메모리 전용이라 재시작 시 PRODUCING 주문이 고아가 됨
+
+- **증상**: `examples/example.db`로 승인(재고부족→PRODUCING) 후 프로그램을 종료했다
+  재실행하면, 메인 메뉴 요약엔 "생산라인 대기 1건"으로 뜨지만 [5] 생산라인 조회에는
+  "현재 진행 중인 생산 작업이 없습니다"로 나와 해당 주문을 영원히 완료 처리할 수 없음.
+  사용자가 재현 요청 중 직접 발견해 질문.
+- **원인**: `ProductionQueue`가 프로세스 메모리에만 존재(Cycle 4에서 PoC 방식 계승 결정,
+  알려진 제한사항으로 문서화되어 있었음)하고 SQLite에 영속화되지 않아, 재시작 시 큐가
+  비워지고 DB의 `PRODUCING` 상태와 동기화가 끊어짐.
+- **해결 방향**: 사람 파트너 확인 후 **새 TDD 사이클로 생산 큐를 DB에 영속화**하기로 결정.
+  사이클을 비교적 작게 나누기로 함(사용자 요청). 새 사이클 번호는 9부터 시작(사용자 지정).
+
+**로드맵(Cycle 9~12)**
+
+| Cycle | 범위 |
+|---|---|
+| 9 | `production_jobs` 테이블 + `ProductionJobRepository`(create/list_all/delete) — 순수 저장소 계층만 |
+| 10 | `ApprovalService`가 재고부족 승인 시 생산 큐 등록과 함께 저장소에도 기록 |
+| 11 | `ProductionService`가 생산완료 처리 시 저장소에서도 작업 제거 |
+| 12 | 프로그램 시작 시 저장소에 남은 작업을 큐로 복원(`restore_production_queue`) + `main.py` 배선, 재시작 시나리오 수동 재검증 |
+
+### Cycle 9 — RED: production_jobs 테이블 + ProductionJobRepository
+
+- **목표(goal)**: `ProductionJob`을 SQLite에 저장·조회(등록 순서 유지)·삭제할 수 있다.
+- **범위(포함)**:
+  - `db/connection.py`: `production_jobs` 테이블 스키마 추가(`id` 자동증가 PK로 등록순서
+    보존, `order_id`, `sample_id`, `shortage_qty`, `actual_qty`, `total_time_min`)
+  - `repository/production_job_repository.py`: `ProductionJobRepository.create/list_all/delete`
+- **범위(제외)**: `ApprovalService`/`ProductionService`/`main.py` 연동은 Cycle 10~12로 분리.
+- **테스트 계획** (`tests/repository/test_production_job_repository.py`):
+  1. `test_생산_작업을_등록하면_저장된다`
+  2. `test_생산_작업을_삭제하면_목록에서_사라진다`
+  3. `test_여러_작업을_등록하면_등록_순서대로_조회된다`
+  - `tmp_db_path` 픽스처 사용, mock 없음.
+- **승인**: 완료. 사람 파트너가 "이 숫자 조합(재고30/주문80/수율0.7)은 새 테스트로
+  추가하지 않고, 계획된 Cycle 9~12를 그대로 진행"하기로 확인(공식 자체는 이미 검증됨을
+  확인받음 — 30+72−80=22가 맞고 사용자 최초 계산 32는 산술 오차였음을 정정).
+- **RED 검증**: `tests/repository/test_production_job_repository.py`(3건 신규) 작성 후
+  실행 → `ModuleNotFoundError: No module named
+  'sample_order_system.repository.production_job_repository'`로 예상대로 실패.
+  기존 테스트 37건은 영향 없이 그대로 통과 — RED 확인됨.
+- **커밋 시점 1 대기 중**: `Plan.md` + `tests/repository/test_production_job_repository.py`
+  커밋&푸쉬 승인 대기.
 
 ## 이력 (History)
 
