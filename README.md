@@ -57,10 +57,13 @@ python main.py
 처음 실행 시 등록된 시료가 없으므로, 아래 순서로 진행하면 전체 흐름을 확인할 수 있습니다.
 
 1. **[1] 시료 관리 → 시료 등록**: 시료 ID, 이름, 평균 생산시간(min/ea), 수율(0.0~1.0),
-   초기 재고를 입력해 시료를 등록합니다.
+   초기 재고를 입력해 시료를 등록합니다. 수율은 0 초과 1.0 이하, 평균 생산시간은 0보다
+   커야 하며, 범위를 벗어나면 등록이 거부됩니다.
 2. **[2] 시료 주문**: 등록한 시료 ID로 고객명·수량을 입력해 주문을 생성합니다
    (상태: `RESERVED`).
-3. **[3] 주문 승인/거절**: 대기 중인 주문을 선택해 승인(Y) 또는 거절(N) 처리합니다.
+3. **[3] 주문 승인/거절**: 대기 중인 주문을 선택하면 먼저 재고 확인 결과(재고 충분
+   여부, 부족 시 부족분/실생산량/총생산시간)를 보여준 뒤 승인(Y) 또는 거절(N)을
+   묻습니다.
    - 재고가 충분하면 주문 수량만큼 재고가 차감되고 즉시 `CONFIRMED`로 전환됩니다.
    - 재고가 부족하면 부족분에 대한 생산 작업이 생산 큐에 등록되고 주문은 `PRODUCING`으로
      전환됩니다.
@@ -98,7 +101,7 @@ python main.py --db examples/example.db
 | 메뉴 입력 | 재현되는 장면 |
 |---|---|
 | `1` → `2` | 시료 목록 (이미지 1) |
-| `0` → `3` → `3` → `Y` | 승인/거절 — 3번(SiC, 삼성전자 파운드리) 승인 시 재고 부족으로 `PRODUCING` 전환 (이미지 3). 실생산량/총생산시간은 `ceil(부족분/수율)` 공식대로 정확히 계산되어 이미지의 예시 수치(목업)와는 다를 수 있음 |
+| `0` → `3` → `3` → `Y` | 승인/거절 — 3번(SiC, 삼성전자 파운드리) 선택 시 재고 확인 미리보기(부족분/실생산량/총생산시간)가 먼저 표시된 뒤, 승인하면 재고 부족으로 `PRODUCING` 전환 (이미지 3). 수치는 `ceil(부족분/수율)` 공식대로 정확히 계산되어 이미지의 예시 수치(목업)와는 다를 수 있음 |
 | `5` → `1` | 생산라인 조회 → 생산완료 처리 (이미지 5) |
 | `4` → `1` (또는 `2`) → `0` | 모니터링 — 상태별 주문 건수 / 재고 현황 (이미지 4) |
 | `6` → `1` | 출고 처리 — 목록에 뜬 `CONFIRMED` 주문 중 하나를 선택해 `RELEASE` (이미지 6) |
@@ -122,7 +125,7 @@ pytest tests/service/test_order_service.py -v   # 특정 파일만
 ## 린트
 
 ```bash
-ruff check src tests main.py
+ruff check src tests main.py examples/seed_example_db.py
 ```
 
 ## 프로젝트 구조
@@ -132,20 +135,24 @@ SampleOrderSystem/
 ├── main.py                          # 실행 진입점 (src 경로 부트스트랩)
 ├── src/sample_order_system/
 │   ├── main.py                      # 실제 진입점 (CLI 인자 파싱, 서비스 조립)
-│   ├── model/                       # Sample, Order, ProductionJob/Queue 등 데이터 모델
+│   ├── model/                       # Sample, Order, ProductionJob/Queue, ApprovalPreview 등
 │   ├── db/                          # SQLite 연결 및 스키마 초기화
-│   ├── repository/                  # Sample/Order CRUD (SQLite)
+│   ├── repository/                  # Sample/Order/ProductionJob CRUD (SQLite)
 │   ├── service/                     # 주문/승인/생산/출고/모니터링 도메인 로직
 │   ├── view/                        # 콘솔 입출력 (비즈니스 로직 없음)
 │   └── controller/                  # 메뉴 흐름 제어
 ├── tests/                           # pytest 테스트 (src와 대응하는 구조)
-├── PoC/                              # 개발 초기 프로토타입(참고용, 최종 구현에 미사용)
+├── examples/                        # 예시 DB 시드 스크립트 + example.db ("예시 DB로 재현해보기" 참고)
 ├── PRD.md / CLAUDE.md / Plan.md / COMMIT_CONVENTION.md   # 문서 관리
 └── requirements-dev.txt             # 개발 의존성 (pytest, ruff)
 ```
 
+> `PoC/`(개발 초기 프로토타입)는 로컬 작업 폴더에는 있지만 `.gitignore`(`/PoC`)로
+> 제외되어 있어 저장소에는 포함되지 않습니다. 클론한 저장소에는 존재하지 않습니다.
+
 ## 데이터 영속성
 
-시료(Sample)·주문(Order) 데이터는 SQLite 파일에 저장되어 프로그램을 재실행해도 유지됩니다.
-생산 큐(ProductionQueue)는 콘솔 세션 동안만 메모리에 유지되며, 프로그램을 종료하면
-초기화됩니다(알려진 제한 사항, `PRD.md` 참고).
+시료(Sample)·주문(Order)·생산 작업(ProductionJob) 데이터는 모두 SQLite 파일에 저장되어
+프로그램을 재실행해도 유지됩니다. 재고 부족으로 생산 큐에 등록된 작업은 `production_jobs`
+테이블에도 함께 기록되며, 프로그램을 재시작하면 남아있는 작업이 자동으로 큐에 복원되어
+이전 세션에서 `PRODUCING` 상태로 남은 주문도 이어서 생산완료 처리할 수 있습니다.
