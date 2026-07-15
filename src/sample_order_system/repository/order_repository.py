@@ -36,6 +36,14 @@ class OrderRepository:
         finally:
             conn.close()
 
+    def list_all(self) -> list[Order]:
+        conn = get_connection(self.db_path)
+        try:
+            rows = conn.execute("SELECT * FROM orders ORDER BY order_id").fetchall()
+            return [self._to_order(row) for row in rows]
+        finally:
+            conn.close()
+
     def next_order_id(self) -> str:
         """기존 주문 ID(ORD-####) 중 최댓값 다음 번호를 ORD-#### 형식으로 반환한다."""
         conn = get_connection(self.db_path)

@@ -364,8 +364,30 @@
 - **RED 검증**: `tests/service/test_monitoring_service.py`(4건 신규) 작성 후 실행 →
   `ModuleNotFoundError: No module named 'sample_order_system.service.monitoring_service'`로
   예상대로 실패. 기존 테스트 28건은 영향 없이 그대로 통과 — RED 확인됨.
-- **커밋 시점 1 대기 중**: `Plan.md` + `tests/service/test_monitoring_service.py` 커밋&푸쉬
-  승인 대기.
+- **커밋 시점 1**: 완료 (`[Cycle 7][RED]`, commit 4fc1584, 푸쉬 완료).
+
+### Cycle 7 — GREEN: 최소 구현
+
+- **구현**: `service/monitoring_service.py` 신규 (`status_counts()`, `stock_states()`).
+  구현 중 `OrderRepository`에 `list_all()`이 없다는 사전 의존성 누락을 발견해
+  `SampleRepository.list_all()`과 동일한 패턴으로 추가(Plan에 명시되지 않았던 최소 보강,
+  MonitoringService의 필수 전제조건이라 REVIEW에서 스코프로 다룸).
+- **GREEN 검증**: 전체 스위트(`pytest`) → 32 passed (기존 28건 + 신규 4건).
+  `ruff check src tests` → All checks passed.
+- **상태**: 완료. REVIEW 단계로 진행 예정 (커밋 없음).
+
+### Cycle 7 — REVIEW
+
+- **스코프 검토**: `OrderRepository.list_all()` 추가는 Plan.md에 명시적으로 적혀있지
+  않았으나, `MonitoringService`가 반드시 필요로 하는 최소 의존성이라 스코프 크리프로
+  보지 않고 그대로 유지하기로 판단(이미 `SampleRepository`에 동일 패턴이 존재해 일관성
+  있음).
+- **리팩토링**: 코드 단순, 즉시 필요한 정리 없음.
+- **갭**: 이번 사이클은 추가 발견된 갭 없음.
+- **REVIEW 후 테스트 재확인**: 전체 테스트 32 passed 유지. `ruff check` All checks passed.
+- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(service/monitoring_service.py,
+  repository/order_repository.py, 관련 테스트) + Plan.md `[Cycle 7][GREEN+REVIEW]`
+  커밋&푸쉬 승인 대기.
 
 ## 이력 (History)
 
