@@ -916,8 +916,32 @@
 - **RED 검증**: `tests/service/test_order_display.py`(1건 신규) 작성 후 실행 →
   `ModuleNotFoundError: No module named 'sample_order_system.service.order_display'`로
   예상대로 실패. 기존 테스트 49건은 영향 없이 그대로 통과 — RED 확인됨.
-- **커밋 시점 1 대기 중**: `Plan.md` + `tests/service/test_order_display.py` 커밋&푸쉬
-  승인 대기.
+- **커밋 시점 1**: 완료 (`[Cycle 15][RED]`, commit 48c2905, 푸쉬 완료).
+
+### Cycle 15 — GREEN: 최소 구현
+
+- **구현**: `service/order_display.py` 신규(`resolve_sample_names`),
+  `view/order_list_view.py`가 `Order` 객체 대신 딕셔너리 목록을 받아 `sample_name`을
+  출력하도록 변경, `controller/approval_controller.py`/`shipment_controller.py`에
+  `sample_repository` 의존성 추가 후 표시 직전 `resolve_sample_names()` 호출,
+  `main_controller.py` 생성부에 `sample_repository` 전달.
+- **GREEN 검증**: 전체 스위트(`pytest`) → 50 passed (기존 49건 + 신규 1건).
+  `ruff check` → All checks passed.
+- **수동 검증**: 콘솔에서 출고 목록에 `S-001` 대신 "실리콘 웨이퍼-8인치" 시료명이
+  정상 표시됨을 실제 실행으로 확인.
+- **상태**: 완료. REVIEW 단계로 진행 예정 (커밋 없음).
+
+### Cycle 15 — REVIEW
+
+- **스코프 검토**: Plan.md 범위를 벗어난 구현 없음. Cycle 13~15(이번 system.pdf 재검토에서
+  나온 항목) 전체 종료.
+- **리팩토링**: 코드 단순, 즉시 필요한 정리 없음.
+- **갭**: 이번 사이클은 발견된 갭 없음.
+- **REVIEW 후 테스트 재확인**: 전체 테스트 50 passed 유지. `ruff check` All checks passed.
+- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(service/order_display.py,
+  view/order_list_view.py, controller/approval_controller.py,
+  controller/shipment_controller.py, controller/main_controller.py, 관련 테스트) +
+  Plan.md `[Cycle 15][GREEN+REVIEW]` 커밋&푸쉬 승인 대기.
 
 **로드맵 추가(Cycle 14~15)** — 사용자가 이번 점검에서 나온 UX 갭 중 2건을 추가로
 진행하기로 결정:

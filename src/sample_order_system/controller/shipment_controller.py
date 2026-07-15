@@ -1,5 +1,7 @@
 from sample_order_system.model.order import OrderStatus
 from sample_order_system.repository.order_repository import OrderRepository
+from sample_order_system.repository.sample_repository import SampleRepository
+from sample_order_system.service.order_display import resolve_sample_names
 from sample_order_system.service.shipment_service import ShipmentService
 from sample_order_system.view import shipment_view
 
@@ -7,13 +9,19 @@ from sample_order_system.view import shipment_view
 class ShipmentController:
     """출고 처리 흐름을 담당."""
 
-    def __init__(self, shipment_service: ShipmentService, order_repository: OrderRepository):
+    def __init__(
+        self,
+        shipment_service: ShipmentService,
+        order_repository: OrderRepository,
+        sample_repository: SampleRepository,
+    ):
         self.shipment_service = shipment_service
         self.order_repository = order_repository
+        self.sample_repository = sample_repository
 
     def run(self) -> None:
         confirmed = [o for o in self.order_repository.list_all() if o.status == OrderStatus.CONFIRMED]
-        shipment_view.show_confirmed_orders(confirmed)
+        shipment_view.show_confirmed_orders(resolve_sample_names(confirmed, self.sample_repository))
         if not confirmed:
             return
 

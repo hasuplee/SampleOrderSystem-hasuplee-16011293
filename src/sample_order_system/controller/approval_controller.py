@@ -1,19 +1,27 @@
 from sample_order_system.model.order import OrderStatus
 from sample_order_system.repository.order_repository import OrderRepository
+from sample_order_system.repository.sample_repository import SampleRepository
 from sample_order_system.service.approval_service import ApprovalService
+from sample_order_system.service.order_display import resolve_sample_names
 from sample_order_system.view import approval_view
 
 
 class ApprovalController:
     """주문 승인/거절 흐름을 담당."""
 
-    def __init__(self, approval_service: ApprovalService, order_repository: OrderRepository):
+    def __init__(
+        self,
+        approval_service: ApprovalService,
+        order_repository: OrderRepository,
+        sample_repository: SampleRepository,
+    ):
         self.approval_service = approval_service
         self.order_repository = order_repository
+        self.sample_repository = sample_repository
 
     def run(self) -> None:
         pending = [o for o in self.order_repository.list_all() if o.status == OrderStatus.RESERVED]
-        approval_view.show_pending_orders(pending)
+        approval_view.show_pending_orders(resolve_sample_names(pending, self.sample_repository))
         if not pending:
             return
 

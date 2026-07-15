@@ -27,10 +27,14 @@ class MainController:
 
         self.sample_controller = SampleController(sample_repository)
         self.order_controller = OrderController(order_service)
-        self.approval_controller = ApprovalController(approval_service, order_repository)
+        self.approval_controller = ApprovalController(
+            approval_service, order_repository, sample_repository,
+        )
         self.monitoring_controller = MonitoringController(monitoring_service)
         self.production_controller = ProductionController(production_service, production_queue)
-        self.shipment_controller = ShipmentController(shipment_service, order_repository)
+        self.shipment_controller = ShipmentController(
+            shipment_service, order_repository, sample_repository,
+        )
 
     def run(self) -> None:
         while True:
