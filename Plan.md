@@ -246,9 +246,36 @@
   있어 추가 정리 불필요.
 - **갭**: 이번 사이클은 발견된 갭 없음.
 - **REVIEW 후 테스트 재확인**: 전체 테스트 21 passed 유지. `ruff check` All checks passed.
-- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(model/production_job.py,
-  model/production_queue.py, service/approval_service.py, 관련 테스트) + Plan.md
-  `[Cycle 4][GREEN+REVIEW]` 커밋&푸쉬 승인 대기.
+- **커밋 시점 2**: 완료 (`[Cycle 4][GREEN+REVIEW]`, commit 299a2d1, 푸쉬 완료). Cycle 4 종료.
+
+## 진행 중 (Active)
+
+### Cycle 5 — RED: 생산완료 처리 (재고 증가 → CONFIRMED 전환·차감 → 큐 제거)
+
+- **목표(goal)**: 담당자가 생산 큐의 현재 작업(맨 앞)을 수동으로 "생산완료 처리"하면:
+  1) 대상 시료 재고가 `actual_qty`만큼 증가하고, 2) 해당 주문이 `CONFIRMED`로 전환되며
+  주문 수량만큼 재고가 차감되고, 3) 생산 큐에서 해당 작업이 제거된다. (PRD.md 4.6절 확정 정책)
+- **범위(포함)**:
+  - `service/production_service.py` 신규: `ProductionService(sample_repo, order_repo,
+    production_queue).complete_current_job()`
+    - 큐가 비어있으면 `ValueError`
+    - 큐 맨 앞 작업을 dequeue → 시료 재고 += `actual_qty` → 주문 조회 →
+      재고 -= `order.quantity` → 주문 상태 `CONFIRMED` → 두 저장소에 update
+- **범위(제외)**: 출고 처리(Cycle 6), 모니터링(Cycle 7), View/Controller.
+- **테스트 계획** (`tests/service/test_production_service.py`):
+  1. `test_생산완료_처리하면_재고가_실생산량만큼_증가한_뒤_주문수량만큼_차감된다`
+     (순증감 = 원래재고 + actual_qty − 주문수량)
+  2. `test_생산완료_처리하면_주문_상태가_CONFIRMED로_변경된다`
+  3. `test_생산완료_처리하면_생산_큐에서_작업이_제거된다`
+  4. `test_생산_큐가_비어있으면_생산완료_처리시_예외가_발생한다`
+  - `tmp_db_path` 픽스처 사용, mock 없음. `ApprovalService.approve_order()`로 재고부족
+    주문을 만들어 큐에 작업을 채운 뒤 검증.
+- **승인**: 완료 (사용자가 "Cycle 5 계획대로 진행해줘"로 승인).
+- **RED 검증**: `tests/service/test_production_service.py`(4건 신규) 작성 후 실행 →
+  `ModuleNotFoundError: No module named 'sample_order_system.service.production_service'`로
+  예상대로 실패. 기존 테스트 21건은 영향 없이 그대로 통과 — RED 확인됨.
+- **커밋 시점 1 대기 중**: `Plan.md` + `tests/service/test_production_service.py` 커밋&푸쉬
+  승인 대기.
 
 ## 이력 (History)
 
