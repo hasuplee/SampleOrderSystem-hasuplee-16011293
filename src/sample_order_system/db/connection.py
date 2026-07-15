@@ -9,6 +9,15 @@ CREATE TABLE IF NOT EXISTS samples (
     yield_rate             REAL NOT NULL,
     stock                  INTEGER NOT NULL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS orders (
+    order_id       TEXT PRIMARY KEY,
+    sample_id      TEXT NOT NULL,
+    customer_name  TEXT NOT NULL,
+    quantity       INTEGER NOT NULL,
+    status         TEXT NOT NULL,
+    FOREIGN KEY (sample_id) REFERENCES samples (sample_id)
+);
 """
 
 

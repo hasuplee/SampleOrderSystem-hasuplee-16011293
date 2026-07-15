@@ -100,8 +100,28 @@
   (1건) 작성 후 실행 → `ModuleNotFoundError: No module named 'sample_order_system.model.order'`로
   수집 단계에서 실패. `model/order.py`, `repository/order_repository.py`,
   `service/order_service.py`가 아직 없어서 발생하는 예상된 실패 — RED 확인됨.
-- **커밋 시점 1 대기 중**: `Plan.md` + `tests/service/`, `tests/repository/test_order_repository.py`
-  커밋&푸쉬 승인 대기.
+- **커밋 시점 1**: 완료 (`[Cycle 2][RED]`, commit 84cb6dd, 푸쉬 완료).
+
+### Cycle 2 — GREEN: 최소 구현
+
+- **구현**: `model/order.py`(OrderStatus, Order), `db/connection.py`(orders 테이블 스키마
+  추가), `repository/order_repository.py`(OrderRepository: create/get/next_order_id),
+  `service/order_service.py`(OrderService.create_order — 시료 존재 검증 → 채번 → RESERVED 생성).
+- **GREEN 검증**: 전체 스위트(`pytest`) → 9 passed (기존 5건 + 신규 4건). `ruff check src tests`
+  → All checks passed.
+- **상태**: 완료. REVIEW 단계로 진행 예정 (커밋 없음).
+
+### Cycle 2 — REVIEW
+
+- **스코프 검토**: Plan.md 범위를 벗어난 구현 없음 (승인/거절, 재고, 생산 큐, View/Controller
+  모두 손대지 않음).
+- **리팩토링**: 없음.
+- **참고**: `CLAUDE.md`/`COMMIT_CONVENTION.md`의 "커밋&푸쉬" 규칙 반영분이 아직 커밋되지 않은
+  상태 — Cycle 2 REVIEW 커밋에 함께 포함할지 사람 파트너에게 확인 필요.
+- **REVIEW 후 테스트 재확인**: 전체 테스트 9 passed 유지.
+- **커밋 시점 2 대기 중**: GREEN 코드(model/order.py, db/connection.py,
+  repository/order_repository.py, service/order_service.py) + Plan.md
+  `[Cycle 2][GREEN+REVIEW]` 커밋&푸쉬 승인 대기.
 
 ## 이력 (History)
 
