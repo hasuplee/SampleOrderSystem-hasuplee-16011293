@@ -761,9 +761,67 @@
 - **리팩토링**: 코드 단순, 즉시 필요한 정리 없음.
 - **갭**: 이번 사이클은 발견된 갭 없음.
 - **REVIEW 후 테스트 재확인**: 전체 테스트 44 passed 유지. `ruff check` All checks passed.
-- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(service/production_recovery.py, main.py,
-  관련 테스트, 재생성된 examples/example.db) + Plan.md `[Cycle 12][GREEN+REVIEW]`
+- **커밋 시점 2**: 완료 (`[Cycle 12][GREEN+REVIEW]`, commit f695edd, 푸쉬 완료).
+  Cycle 12 종료. **Cycle 9~12 로드맵(생산 큐 영속화) 전체 완료 — 사용자가 발견한
+  버그 완전 해소.**
+
+## 진행 중 (Active)
+
+### system.pdf 재검토 — 미구현/갭 점검
+
+- **배경**: 사용자 요청으로 `system.pdf` 전체를 다시 정독하며 구현 코드와 대조. 코드
+  리딩뿐 아니라 실제 실행으로 검증.
+- **발견 사항**:
+  1. **[크래시 버그, 심각]** 시료 등록 시 수율(yield_rate)에 0을 입력해도 검증 없이
+     저장되고, 이후 그 시료로 재고부족 승인을 시도하면 `_enqueue_production_job()`의
+     `math.ceil(shortage_qty / sample.yield_rate)`에서 `ZeroDivisionError` 발생.
+     `ApprovalController`는 `ValueError`만 캐치해 프로그램이 통째로 죽는 것을 실제
+     실행으로 재현·확인함(`examples`와 무관한 별도 스크래치 DB로 테스트, 정리함).
+  2. 승인 시 재고 확인 미리보기 없음(PDF는 재고확인→부족분/실생산량 표시→Y/N인데
+     우리는 Y/N 먼저 묻고 결과를 사후 표시) — UX 갭, 이번엔 수정 보류.
+  3. 평균생산시간(avg_production_time) 값 검증 없음(0 이하도 등록 가능) — 크래시는
+     아니지만 1번과 같은 원인 계열이라 같이 수정 대상에 포함.
+  4. 주문/출고 목록에 시료 ID만 표시(시료명 미표시) — UX 갭, 이번엔 수정 보류.
+  5. 시료 검색이 이름만 지원(ID 미지원) — 기존에 PRD.md에 이미 백로그로 명시된 항목,
+     새로 발견한 것 아님.
+  6. 타임스탬프/처리일시 필드 없음 — PDF 예시 화면엔 있으나 기능명세엔 명시적 요구사항
+     아님, 우선순위 낮음.
+  7. 시료 등록 시 "재고" 입력 자체가 PDF 12페이지 속성값 표엔 없음 — 이미 PRD.md에
+     문서화된 해석/가정.
+- **결정**: 사람 파트너 확인 결과, **크래시 버그(1, 3 — 수율/생산시간 값 검증)만 새
+  사이클로 즉시 수정**하고 나머지(2, 4, 6, 7)는 목록화만 하고 이번엔 수정하지 않음.
+- **상태**: 완료(점검). 수정은 Cycle 13에서 진행.
+
+### Cycle 13 — RED: 시료 등록 시 수율/평균생산시간 값 검증
+
+- **목표(goal)**: 시료 등록 시 수율이 `(0.0, 1.0]` 범위를 벗어나거나 평균생산시간이
+  0 이하이면 등록을 거부한다. `ZeroDivisionError` 크래시의 근본 원인을 데이터 입력
+  단계에서 차단한다.
+- **범위(포함)**:
+  - `repository/sample_repository.py`의 `create()`에 값 검증 추가: 수율이
+    `0 < yield_rate <= 1.0`이 아니면 `ValueError`, 평균생산시간이 `avg_production_time > 0`
+    이 아니면 `ValueError`.
+- **범위(제외)**: 재고 확인 미리보기 UX 개선, 시료명 표시, 타임스탬프 등은 이번 사이클
+  대상 아님(위 점검 결과 보류 결정).
+- **테스트 계획** (`tests/repository/test_sample_repository.py` 추가):
+  1. `test_수율이_0이면_등록시_예외가_발생한다`
+  2. `test_수율이_1을_초과하면_등록시_예외가_발생한다`
+  3. `test_평균생산시간이_0이하이면_등록시_예외가_발생한다`
+  - `tmp_db_path` 픽스처 사용, mock 없음.
+- **승인**: 완료 (사용자가 "저거는 Cycle 13으로 진행"으로 승인).
+- **RED 검증**: `tests/repository/test_sample_repository.py`에 3건 신규 작성 후 실행 →
+  3건 모두 `Failed: DID NOT RAISE ValueError`로 예상대로 실패(검증 로직 부재). 기존 6건은
+  그대로 통과 — RED 확인됨.
+- **커밋 시점 1 대기 중**: `Plan.md` + `tests/repository/test_sample_repository.py`
   커밋&푸쉬 승인 대기.
+
+**로드맵 추가(Cycle 14~15)** — 사용자가 이번 점검에서 나온 UX 갭 중 2건을 추가로
+진행하기로 결정:
+
+| Cycle | 범위 |
+|---|---|
+| 14 | 승인 시 재고 확인 미리보기 — PDF처럼 부족분/실생산량/총생산시간을 먼저 보여준 뒤 Y/N을 묻는 흐름으로 변경 |
+| 15 | 주문/출고 목록에 시료 ID 대신(또는 함께) 시료명 표시 |
 
 ## 이력 (History)
 

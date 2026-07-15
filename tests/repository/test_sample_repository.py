@@ -68,3 +68,24 @@ def test_시료_정보를_수정하면_저장된다(tmp_db_path):
     repo.update(sample)
 
     assert repo.get("S-001").stock == 80
+
+
+def test_수율이_0이면_등록시_예외가_발생한다(tmp_db_path):
+    repo = SampleRepository(tmp_db_path)
+
+    with pytest.raises(ValueError):
+        repo.create(_시료(yield_rate=0))
+
+
+def test_수율이_1을_초과하면_등록시_예외가_발생한다(tmp_db_path):
+    repo = SampleRepository(tmp_db_path)
+
+    with pytest.raises(ValueError):
+        repo.create(_시료(yield_rate=1.1))
+
+
+def test_평균생산시간이_0이하이면_등록시_예외가_발생한다(tmp_db_path):
+    repo = SampleRepository(tmp_db_path)
+
+    with pytest.raises(ValueError):
+        repo.create(_시료(avg_production_time=0))
