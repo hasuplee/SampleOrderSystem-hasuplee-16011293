@@ -427,7 +427,46 @@
 - **RED 검증**: `tests/view/test_input_parsing.py`(5건 신규) 작성 후 실행 →
   `ModuleNotFoundError: No module named 'sample_order_system.view.input_parsing'`로
   예상대로 실패. 기존 테스트 32건은 영향 없이 그대로 통과 — RED 확인됨.
-- **커밋 시점 1 대기 중**: `Plan.md` + `tests/view/` 커밋&푸쉬 승인 대기.
+- **커밋 시점 1**: 완료 (`[Cycle 8][RED]`, commit 2760a7b, 푸쉬 완료).
+
+### Cycle 8 — GREEN: 최소 구현
+
+- **순수 로직 구현**: `view/input_parsing.py`(parse_menu_choice, parse_positive_int) —
+  RED 테스트 5건을 만족하는 최소 구현.
+- **입출력 글루 코드 구현(합의된 대로 사전 테스트 없이 구현 후 수동 검증)**:
+  - `view/prompts.py`(read_menu_choice/read_positive_int/read_non_negative_int/read_float/
+    read_text — 재입력 루프 포함)
+  - `view/{main,sample,order,approval,monitoring,production,shipment}_view.py`
+  - `controller/{main,sample,order,approval,monitoring,production,shipment}_controller.py`
+    (Cycle 1~7에서 TDD로 검증된 서비스/저장소를 호출하는 배선)
+  - `src/sample_order_system/main.py`(CLI 진입점, --db 인자), 루트 `main.py`(src 경로 부트스트랩)
+- **자동화 검증**: 전체 스위트(`pytest`) → 37 passed. `ruff check src tests main.py` →
+  All checks passed.
+- **수동 검증(골든 패스, 임시 DB로 실행)**:
+  1. 시료 등록(S-001, 재고 10) → 시료 주문(수량 30, 재고부족) → 승인(Y) → `PRODUCING` 전환,
+     생산 큐에 부족분 20/실생산량 22/총생산시간 11.0분 작업 등록 확인
+  2. 생산라인 조회 → 현재 작업 표시 확인 → 생산완료 처리 → 재고 10→2(=10+22-30) 반영 확인,
+     주문 `CONFIRMED` 전환 확인
+  3. 모니터링(주문량 확인/재고량 확인) → CONFIRMED 1건, 재고 2/대기수요 0/여유/100% 정상 출력
+  4. 출고 처리 → 주문 `RELEASE` 전환 확인, 메인 메뉴 종료(`0`) → 정상 종료(트레이스백 없음)
+  5. 잘못된 입력(`abc`, `9`, `xyz`) 시도 → 프로그램이 죽지 않고 "다시 입력해주세요" 재입력
+     요구 확인 (PRD.md 7절의 "입력값 검증 부족" PoC 갭 해소 확인)
+  6. 동일 DB로 재실행 → 이전에 등록한 시료가 그대로 조회됨 → 영속성 확인
+- **상태**: 완료. REVIEW 단계로 진행 예정 (커밋 없음).
+
+### Cycle 8 — REVIEW
+
+- **스코프 검토**: Plan.md 범위를 벗어난 신규 비즈니스 로직 없음.
+- **리팩토링 발견 및 승인**: `approval_view.py`/`shipment_view.py`의 번호 범위 검증과 주문
+  목록 출력 형식이 중복 → 사람 파트너에게 제안 후 **"지금 진행"** 승인받아 즉시 수행.
+  - `view/prompts.py`에 `read_index_in_range(prompt, count)` 추가
+  - `view/order_list_view.py` 신규(`show_order_list(orders, empty_message)`)
+  - `approval_view.py`, `shipment_view.py`가 위 공통 헬퍼를 사용하도록 축약
+- **REVIEW 후 재검증**: 전체 테스트 37 passed 유지, `ruff check` All checks passed.
+  리팩토링 이후 승인→출고 콘솔 흐름을 다시 수동 실행해 정상 동작 재확인.
+- **커밋 시점 2 대기 중**: GREEN+REVIEW 전체(view/, controller/, main.py, src의
+  sample_order_system/main.py, 관련 테스트) + Plan.md `[Cycle 8][GREEN+REVIEW]` 커밋&푸쉬
+  승인 대기.
 
 ## 이력 (History)
 
