@@ -10,6 +10,13 @@ class SampleRepository:
         init_db(db_path)
 
     def create(self, sample: Sample) -> None:
+        if not (0 < sample.yield_rate <= 1.0):
+            raise ValueError(f"수율은 0.0 초과 1.0 이하이어야 합니다: {sample.yield_rate}")
+        if sample.avg_production_time <= 0:
+            raise ValueError(
+                f"평균 생산시간은 0보다 커야 합니다: {sample.avg_production_time}"
+            )
+
         conn = get_connection(self.db_path)
         try:
             if self._exists(conn, sample.sample_id):

@@ -812,8 +812,29 @@
 - **RED 검증**: `tests/repository/test_sample_repository.py`에 3건 신규 작성 후 실행 →
   3건 모두 `Failed: DID NOT RAISE ValueError`로 예상대로 실패(검증 로직 부재). 기존 6건은
   그대로 통과 — RED 확인됨.
-- **커밋 시점 1 대기 중**: `Plan.md` + `tests/repository/test_sample_repository.py`
-  커밋&푸쉬 승인 대기.
+- **커밋 시점 1**: 완료 (`[Cycle 13][RED]`, commit 589bb20, 푸쉬 완료).
+
+### Cycle 13 — GREEN: 최소 구현
+
+- **구현**: `repository/sample_repository.py`의 `create()` 진입부에 수율
+  `0 < yield_rate <= 1.0`, 평균생산시간 `avg_production_time > 0` 검증 추가(위반 시
+  `ValueError`).
+- **GREEN 검증**: 전체 스위트(`pytest`) → 47 passed (기존 44건 + 신규 3건).
+  `ruff check` → All checks passed.
+- **크래시 시나리오 재검증**: 별도 스크래치 DB로 수율 0 등록을 다시 시도 →
+  `오류: 수율은 0.0 초과 1.0 이하이어야 합니다: 0.0`로 정상 거부되고 프로그램은
+  크래시 없이 계속 실행됨을 확인. **최초 발견한 크래시 버그 해소.**
+- **상태**: 완료. REVIEW 단계로 진행 예정 (커밋 없음).
+
+### Cycle 13 — REVIEW
+
+- **스코프 검토**: Plan.md 범위를 벗어난 구현 없음(재고 확인 미리보기, 시료명 표시는
+  Cycle 14~15로 분리 유지).
+- **리팩토링**: 코드 단순, 즉시 필요한 정리 없음.
+- **갭**: 이번 사이클은 발견된 갭 없음.
+- **REVIEW 후 테스트 재확인**: 전체 테스트 47 passed 유지. `ruff check` All checks passed.
+- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(repository/sample_repository.py, 관련 테스트)
+  + Plan.md `[Cycle 13][GREEN+REVIEW]` 커밋&푸쉬 승인 대기.
 
 **로드맵 추가(Cycle 14~15)** — 사용자가 이번 점검에서 나온 UX 갭 중 2건을 추가로
 진행하기로 결정:
