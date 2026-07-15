@@ -609,9 +609,38 @@
 - **리팩토링**: 코드 단순, 즉시 필요한 정리 없음.
 - **갭**: 이번 사이클은 발견된 갭 없음.
 - **REVIEW 후 테스트 재확인**: 전체 테스트 40 passed 유지. `ruff check` All checks passed.
-- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(db/connection.py,
-  repository/production_job_repository.py, 관련 테스트) + Plan.md
-  `[Cycle 9][GREEN+REVIEW]` 커밋&푸쉬 승인 대기.
+- **커밋 시점 2**: 완료 (`[Cycle 9][GREEN+REVIEW]`, commit 6ebd5a1, 푸쉬 완료).
+  Cycle 9 종료. `examples/example.db`는 이번 사이클과 무관한 로컬 변경이라 커밋에서 제외
+  (다음에 정리 필요).
+
+## 진행 중 (Active)
+
+### Cycle 10 — RED: ApprovalService가 재고부족 승인 시 저장소에도 기록
+
+- **목표(goal)**: 승인 시 재고가 부족해 생산 큐에 작업을 등록할 때, 인메모리 큐뿐 아니라
+  `ProductionJobRepository`에도 함께 저장한다(Cycle 9에서 만든 저장소를 실제로 연결하는
+  첫 단계).
+- **범위(포함)**:
+  - `service/approval_service.py` 수정: 생성자에 `production_job_repository` 파라미터
+    추가. `_enqueue_production_job()`에서 큐 등록과 함께
+    `production_job_repository.create(job)` 호출.
+  - 기존 `tests/service/test_approval_service.py`의 `ApprovalService(...)` 생성 헬퍼에
+    `production_job_repository` 인자 추가(인터페이스 변경에 따른 기존 테스트 수정).
+- **범위(제외)**: `ProductionService`의 삭제 연동(Cycle 11), 재시작 시 큐 복원(Cycle 12),
+  `main.py` 배선(Cycle 12).
+- **테스트 계획** (`tests/service/test_approval_service.py` 추가):
+  1. `test_재고가_부족하면_승인시_생산_작업이_저장소에도_기록된다` —
+     `ProductionJobRepository.list_all()`에 방금 승인된 작업이 포함되는지 확인
+  - `tmp_db_path` 픽스처 사용, mock 없음.
+- **승인**: 완료 (사용자가 "Cycle 10 계획대로 진행해줘"로 승인).
+- **RED 검증**: `tests/service/test_approval_service.py`의 `_서비스` 헬퍼에
+  `production_job_repository` 인자 추가, 기존 8건 호출부 수정, 신규 테스트
+  `test_재고가_부족하면_승인시_생산_작업이_저장소에도_기록된다` 추가 후 실행 →
+  기존 8건 모두 `TypeError: ApprovalService.__init__() takes 4 positional arguments
+  but 5 were given`로 예상대로 실패(생성자 시그니처 변경 미반영). 다른 테스트 파일
+  33건은 영향 없이 통과 — RED 확인됨.
+- **커밋 시점 1 대기 중**: `Plan.md` + `tests/service/test_approval_service.py` 커밋&푸쉬
+  승인 대기.
 
 ## 이력 (History)
 
