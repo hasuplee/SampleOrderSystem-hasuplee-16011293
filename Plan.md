@@ -158,7 +158,34 @@
   attribute 'update'`, service 4건은 `ModuleNotFoundError: No module named
   'sample_order_system.service.approval_service'`로 예상대로 실패. 기존 8건은 그대로 통과 —
   RED 확인됨.
-- **커밋 시점 1 대기 중**: `Plan.md` + 신규/수정 테스트 파일 커밋&푸쉬 승인 대기.
+- **커밋 시점 1**: 완료 (`[Cycle 3][RED]`, commit 161844c, 푸쉬 완료).
+
+### Cycle 3 — GREEN: 최소 구현
+
+- **구현**: `repository/sample_repository.py`에 `update()` 추가,
+  `repository/order_repository.py`에 `update()` 추가, `service/approval_service.py` 신규
+  (`ApprovalService.reject_order/approve_order` — 재고 충분 시 CONFIRMED 전환·차감,
+  재고 부족 시 `NotImplementedError`).
+- **GREEN 검증**: 전체 스위트(`pytest`) → 15 passed (기존 9건 + 신규 6건).
+  `ruff check src tests` → All checks passed.
+- **상태**: 완료. REVIEW 단계로 진행 예정 (커밋 없음).
+
+### Cycle 3 — REVIEW
+
+- **스코프 검토**: Plan.md 범위를 벗어난 구현 없음.
+- **갭 발견**: 존재하지 않는 `order_id`로 승인/거절 시 `AttributeError`가 발생하는 문제 발견
+  (원래 테스트 목록에 없던 케이스). 사람 파트너에게 확인 → **"지금 테스트 추가해 바로 명확한
+  예외로 처리"** 로 결정.
+- **추가 RED→GREEN**: `test_존재하지_않는_주문을_승인하면_예외가_발생한다`,
+  `test_존재하지_않는_주문을_거절하면_예외가_발생한다` 추가 → RED 확인
+  (`AttributeError`가 발생해 `pytest.raises(ValueError)` 불일치로 실패) →
+  `ApprovalService._get_order_or_raise()` 헬퍼 추가로 `ValueError` 발생하도록 수정 → GREEN 확인.
+- **리팩토링**: `reject_order`/`approve_order` 공통 로직을 `_get_order_or_raise()`로 추출
+  (중복 제거).
+- **REVIEW 후 테스트 재확인**: 전체 테스트 17 passed. `ruff check` All checks passed.
+- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(repository update 2건,
+  service/approval_service.py, 관련 테스트) + Plan.md `[Cycle 3][GREEN+REVIEW]` 커밋&푸쉬
+  승인 대기.
 
 ## 이력 (History)
 

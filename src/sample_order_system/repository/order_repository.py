@@ -51,6 +51,19 @@ class OrderRepository:
                 max_num = max(max_num, int(m.group(1)))
         return f"ORD-{max_num + 1:04d}"
 
+    def update(self, order: Order) -> None:
+        conn = get_connection(self.db_path)
+        try:
+            conn.execute(
+                "UPDATE orders SET sample_id = ?, customer_name = ?, "
+                "quantity = ?, status = ? WHERE order_id = ?",
+                (order.sample_id, order.customer_name, order.quantity,
+                 order.status.value, order.order_id),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
     @staticmethod
     def _to_order(row) -> Order:
         return Order(

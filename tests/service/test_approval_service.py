@@ -57,3 +57,19 @@ def test_재고가_부족하면_승인시_NotImplementedError가_발생한다(tm
 
     with pytest.raises(NotImplementedError):
         service.approve_order(order.order_id)
+
+
+def test_존재하지_않는_주문을_승인하면_예외가_발생한다(tmp_db_path):
+    sample_repo, order_repo, _ = _주문_준비(tmp_db_path)
+    service = ApprovalService(sample_repo, order_repo)
+
+    with pytest.raises(ValueError):
+        service.approve_order("ORD-NOT-EXIST")
+
+
+def test_존재하지_않는_주문을_거절하면_예외가_발생한다(tmp_db_path):
+    sample_repo, order_repo, _ = _주문_준비(tmp_db_path)
+    service = ApprovalService(sample_repo, order_repo)
+
+    with pytest.raises(ValueError):
+        service.reject_order("ORD-NOT-EXIST")

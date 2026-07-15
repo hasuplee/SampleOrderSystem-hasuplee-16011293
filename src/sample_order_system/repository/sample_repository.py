@@ -53,6 +53,19 @@ class SampleRepository:
         finally:
             conn.close()
 
+    def update(self, sample: Sample) -> None:
+        conn = get_connection(self.db_path)
+        try:
+            conn.execute(
+                "UPDATE samples SET name = ?, avg_production_time = ?, "
+                "yield_rate = ?, stock = ? WHERE sample_id = ?",
+                (sample.name, sample.avg_production_time, sample.yield_rate,
+                 sample.stock, sample.sample_id),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
     @staticmethod
     def _exists(conn, sample_id: str) -> bool:
         row = conn.execute(
