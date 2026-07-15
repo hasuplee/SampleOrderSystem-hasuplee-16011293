@@ -227,8 +227,28 @@
   `ModuleNotFoundError: No module named 'sample_order_system.model.production_job'`/
   `'...production_queue'`로 수집 단계에서 예상대로 실패. 기존 repository/order_service
   테스트 11건은 영향 없이 그대로 통과 — RED 확인됨.
-- **커밋 시점 1 대기 중**: `Plan.md` + `tests/model/`, `tests/service/test_approval_service.py`
-  커밋&푸쉬 승인 대기.
+- **커밋 시점 1**: 완료 (`[Cycle 4][RED]`, commit 78a26ca, 푸쉬 완료).
+
+### Cycle 4 — GREEN: 최소 구현
+
+- **구현**: `model/production_job.py`(ProductionJob), `model/production_queue.py`
+  (ProductionQueue: enqueue/dequeue/peek/list_all), `service/approval_service.py` 수정
+  (생성자에 `production_queue` 추가, 재고부족 분기를 `_enqueue_production_job()`으로 구현 —
+  부족분/실생산량(ceil)/총생산시간 계산 → 큐 등록 → 주문 `PRODUCING` 전환).
+- **GREEN 검증**: 전체 스위트(`pytest`) → 21 passed (기존 17건 + 신규/교체 4건).
+  `ruff check src tests` → All checks passed.
+- **상태**: 완료. REVIEW 단계로 진행 예정 (커밋 없음).
+
+### Cycle 4 — REVIEW
+
+- **스코프 검토**: Plan.md 범위를 벗어난 구현 없음.
+- **리팩토링**: `approve_order()`의 두 분기가 `_enqueue_production_job()`으로 이미 분리되어
+  있어 추가 정리 불필요.
+- **갭**: 이번 사이클은 발견된 갭 없음.
+- **REVIEW 후 테스트 재확인**: 전체 테스트 21 passed 유지. `ruff check` All checks passed.
+- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(model/production_job.py,
+  model/production_queue.py, service/approval_service.py, 관련 테스트) + Plan.md
+  `[Cycle 4][GREEN+REVIEW]` 커밋&푸쉬 승인 대기.
 
 ## 이력 (History)
 
