@@ -10,6 +10,7 @@ from sample_order_system.repository.sample_repository import SampleRepository
 from sample_order_system.service.approval_service import ApprovalService
 from sample_order_system.service.monitoring_service import MonitoringService
 from sample_order_system.service.order_service import OrderService
+from sample_order_system.service.production_recovery import restore_production_queue
 from sample_order_system.service.production_service import ProductionService
 from sample_order_system.service.shipment_service import ShipmentService
 
@@ -27,6 +28,7 @@ def main() -> None:
     order_repository = OrderRepository(args.db)
     production_job_repository = ProductionJobRepository(args.db)
     production_queue = ProductionQueue()
+    restore_production_queue(production_job_repository, production_queue)
 
     controller = MainController(
         sample_repository=sample_repository,

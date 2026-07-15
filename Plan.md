@@ -739,8 +739,31 @@
 - **RED 검증**: `tests/service/test_production_recovery.py`(2건 신규) 작성 후 실행 →
   `ModuleNotFoundError: No module named 'sample_order_system.service.production_recovery'`
   로 예상대로 실패. 기존 테스트 42건은 영향 없이 그대로 통과 — RED 확인됨.
-- **커밋 시점 1 대기 중**: `Plan.md` + `tests/service/test_production_recovery.py` 커밋&푸쉬
-  승인 대기.
+- **커밋 시점 1**: 완료 (`[Cycle 12][RED]`, commit d091e84, 푸쉬 완료).
+
+### Cycle 12 — GREEN: 최소 구현
+
+- **구현**: `service/production_recovery.py` 신규(`restore_production_queue`), `main.py`에
+  서비스 조립 직후 호출 배선.
+- **GREEN 검증**: 전체 스위트(`pytest`) → 44 passed (기존 42건 + 신규 2건).
+  `ruff check` → All checks passed.
+- **버그 재현 시나리오 수동 재검증**: 세션 A에서 `examples/example.db`로 ORD-0003(SiC)
+  승인(재고부족→PRODUCING) 후 종료 → 세션 B(새 프로세스)에서 [5] 생산라인 조회 진입 시
+  이번엔 `[현재 작업] 주문 ORD-0003 시료 S-003 부족분 170 실생산량 185 총생산시간 148.0분`
+  이 정상적으로 복원되어 표시됨. 생산완료 처리도 정상 동작(재고 2385→2370, 생산라인
+  대기 0건). **사용자가 최초 보고한 버그가 완전히 해소됨을 확인.**
+  검증 후 `examples/example.db`는 시드 스크립트로 초기 상태로 재생성.
+- **상태**: 완료. REVIEW 단계로 진행 예정 (커밋 없음).
+
+### Cycle 12 — REVIEW
+
+- **스코프 검토**: Plan.md 범위를 벗어난 구현 없음. Cycle 9~12 로드맵 전체 완료.
+- **리팩토링**: 코드 단순, 즉시 필요한 정리 없음.
+- **갭**: 이번 사이클은 발견된 갭 없음.
+- **REVIEW 후 테스트 재확인**: 전체 테스트 44 passed 유지. `ruff check` All checks passed.
+- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(service/production_recovery.py, main.py,
+  관련 테스트, 재생성된 examples/example.db) + Plan.md `[Cycle 12][GREEN+REVIEW]`
+  커밋&푸쉬 승인 대기.
 
 ## 이력 (History)
 
