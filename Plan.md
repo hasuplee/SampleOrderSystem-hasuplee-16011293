@@ -385,9 +385,49 @@
 - **리팩토링**: 코드 단순, 즉시 필요한 정리 없음.
 - **갭**: 이번 사이클은 추가 발견된 갭 없음.
 - **REVIEW 후 테스트 재확인**: 전체 테스트 32 passed 유지. `ruff check` All checks passed.
-- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(service/monitoring_service.py,
-  repository/order_repository.py, 관련 테스트) + Plan.md `[Cycle 7][GREEN+REVIEW]`
-  커밋&푸쉬 승인 대기.
+- **커밋 시점 2**: 완료 (`[Cycle 7][GREEN+REVIEW]`, commit b9a88a7, 푸쉬 완료). Cycle 7 종료.
+
+## 진행 중 (Active)
+
+### Cycle 8 — RED: 콘솔 View/Controller 통합 (메인 메뉴, 입력 검증)
+
+- **목표(goal)**: PRD.md 4.1절의 메인 메뉴(시료 관리/시료 주문/승인·거절/모니터링/생산라인
+  조회/출고 처리)를 콘솔에서 실제로 조작할 수 있고, PRD.md 7절에 남아있던 PoC 갭
+  "입력값 검증 부족"이 해소된다(숫자 아닌 입력, 범위 밖 선택 시 프로그램이 죽지 않고
+  재입력을 요구).
+- **테스트 범위에 대한 판단(중요)**: 이 사이클은 두 가지 성격의 코드가 섞여 있다.
+  1) **순수 로직** — 원시 입력 문자열을 검증/파싱하는 함수(메뉴 선택 검증, 양의 정수
+     파싱). 입출력 부수효과가 없어 TDD로 사전 테스트 가능 → 아래 테스트 계획 대상.
+  2) **입출력 글루 코드** — `input()`/`print()`로 실제 터미널과 상호작용하는
+     View 출력 함수와 메뉴 루프(Controller). 이 부분은 PoC ConsoleMVC 구조를 그대로
+     계승해 서비스 계층(Cycle 1~7에서 이미 TDD로 검증됨)을 호출하는 얇은 배선(wiring)
+     이며, 순수 로직처럼 미리 실패 테스트를 작성하기보다 **구현 후 실제 실행으로
+     골든 패스를 수동 검증**한다(자동화된 대화형 입출력 테스트는 가치 대비 비용이
+     크다고 판단 — TDD 예외: "일회성/자동 생성에 준하는 순수 배선 코드"). 완료 후
+     `verify` 스킬로 실제 실행 결과를 이 대화에서 보고한다.
+  - 이 판단 자체가 설계 결정이라 사람 파트너 승인 대상에 포함한다.
+- **범위(포함)**:
+  - `view/input_parsing.py`: `parse_menu_choice(raw, valid_choices)`,
+    `parse_positive_int(raw)` — 순수 함수, TDD 대상
+  - `view/*.py`, `controller/*.py`, `main.py`: 기존 서비스(OrderService, ApprovalService,
+    ProductionService, ShipmentService, MonitoringService, SampleRepository,
+    OrderRepository, ProductionQueue)를 호출하는 콘솔 메뉴 루프. 잘못된 입력 시
+    `input_parsing`의 파싱 결과가 `None`이면 재입력을 요구(프로그램 종료 없음).
+- **범위(제외)**: 신규 비즈니스 로직 없음(전부 기존 서비스 재사용). 여러 사용자 동시 접속,
+  권한/로그인 분리는 PRD에 없으므로 제외.
+- **테스트 계획** (`tests/view/test_input_parsing.py`):
+  1. `test_유효한_메뉴_선택이면_그대로_반환한다`
+  2. `test_유효하지_않은_메뉴_선택이면_None을_반환한다`
+  3. `test_양의_정수_문자열이면_정수로_변환한다`
+  4. `test_숫자가_아니면_None을_반환한다`
+  5. `test_0_이하의_정수이면_None을_반환한다`
+  - mock 없음, 입출력 부수효과 없는 순수 함수만 대상.
+- **승인**: 완료. 사람 파트너가 "테스트 범위 판단"(순수 로직만 TDD, 메뉴 루프/main.py는
+  구현 후 수동 검증)에 명시적으로 동의함.
+- **RED 검증**: `tests/view/test_input_parsing.py`(5건 신규) 작성 후 실행 →
+  `ModuleNotFoundError: No module named 'sample_order_system.view.input_parsing'`로
+  예상대로 실패. 기존 테스트 32건은 영향 없이 그대로 통과 — RED 확인됨.
+- **커밋 시점 1 대기 중**: `Plan.md` + `tests/view/` 커밋&푸쉬 승인 대기.
 
 ## 이력 (History)
 
