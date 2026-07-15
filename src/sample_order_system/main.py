@@ -36,7 +36,9 @@ def main() -> None:
             sample_repository, order_repository, production_queue, production_job_repository,
         ),
         monitoring_service=MonitoringService(sample_repository, order_repository),
-        production_service=ProductionService(sample_repository, order_repository, production_queue),
+        production_service=ProductionService(
+            sample_repository, order_repository, production_queue, production_job_repository,
+        ),
         production_queue=production_queue,
         shipment_service=ShipmentService(order_repository),
     )

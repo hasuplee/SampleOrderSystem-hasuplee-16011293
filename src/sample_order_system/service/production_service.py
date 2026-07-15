@@ -1,6 +1,7 @@
 from sample_order_system.model.order import OrderStatus
 from sample_order_system.model.production_queue import ProductionQueue
 from sample_order_system.repository.order_repository import OrderRepository
+from sample_order_system.repository.production_job_repository import ProductionJobRepository
 from sample_order_system.repository.sample_repository import SampleRepository
 
 
@@ -12,10 +13,12 @@ class ProductionService:
         sample_repository: SampleRepository,
         order_repository: OrderRepository,
         production_queue: ProductionQueue,
+        production_job_repository: ProductionJobRepository,
     ):
         self.sample_repository = sample_repository
         self.order_repository = order_repository
         self.production_queue = production_queue
+        self.production_job_repository = production_job_repository
 
     def complete_current_job(self) -> None:
         job = self.production_queue.dequeue()
@@ -31,3 +34,4 @@ class ProductionService:
 
         self.sample_repository.update(sample)
         self.order_repository.update(order)
+        self.production_job_repository.delete(job.order_id)
