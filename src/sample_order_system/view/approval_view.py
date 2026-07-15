@@ -10,6 +10,17 @@ def get_target_order_index(count: int) -> int:
     return read_index_in_range("승인/거절할 번호 > ", count)
 
 
+def show_approval_preview(preview) -> None:
+    print("재고 확인 중...")
+    if preview.sufficient:
+        print("재고 충분.")
+        return
+    print(
+        f"재고 부족. 부족분 {preview.shortage_qty} ea "
+        f"(실생산량 {preview.actual_qty} ea / {preview.total_time_min:.1f} min)"
+    )
+
+
 def get_approve_or_reject() -> str:
     return read_menu_choice("[Y] 승인  [N] 거절 > ", {"Y", "N", "y", "n"}).upper()
 

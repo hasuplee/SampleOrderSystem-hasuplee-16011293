@@ -864,8 +864,34 @@
 - **RED 검증**: `tests/service/test_approval_service.py`에 2건 신규 작성 후 실행 → 2건
   모두 `AttributeError: 'ApprovalService' object has no attribute 'preview_approval'`로
   예상대로 실패. 기존 8건은 그대로 통과 — RED 확인됨.
-- **커밋 시점 1 대기 중**: `Plan.md` + `tests/service/test_approval_service.py` 커밋&푸쉬
-  승인 대기.
+- **커밋 시점 1**: 완료 (`[Cycle 14][RED]`, commit d49992d, 푸쉬 완료).
+
+### Cycle 14 — GREEN: 최소 구현
+
+- **구현**: `model/approval_preview.py`(ApprovalPreview) 신규,
+  `service/approval_service.py`에 `preview_approval()` 추가(부수효과 없음, 재고 확인만),
+  `_enqueue_production_job()`과 계산 로직 중복을 피하기 위해 `_calculate_shortage()`
+  정적 메서드로 추출해 공유. `view/approval_view.py`에 `show_approval_preview()` 추가,
+  `controller/approval_controller.py`가 번호 선택 직후 `preview_approval()` 호출 →
+  결과 표시 → 그다음 Y/N을 묻도록 순서 변경.
+- **GREEN 검증**: 전체 스위트(`pytest`) → 49 passed (기존 47건 + 신규 2건).
+  `ruff check` → All checks passed.
+- **수동 검증**: 콘솔에서 재고부족 주문 승인 시 "번호 선택 → 재고 확인 중... → 재고
+  부족. 부족분 20 ea (실생산량 22 ea / 11.0 min) → Y/N 승인" 순서로 PDF와 동일한 흐름이
+  나오는 것을 실제 실행으로 확인.
+- **상태**: 완료. REVIEW 단계로 진행 예정 (커밋 없음).
+
+### Cycle 14 — REVIEW
+
+- **스코프 검토**: Plan.md 범위를 벗어난 구현 없음. `_calculate_shortage()` 추출은 계획에
+  명시된 중복 제거 작업이라 스코프 내.
+- **리팩토링**: GREEN 단계에서 이미 반영 완료, 추가 필요 없음.
+- **갭**: 이번 사이클은 발견된 갭 없음.
+- **REVIEW 후 테스트 재확인**: 전체 테스트 49 passed 유지. `ruff check` All checks passed.
+- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(model/approval_preview.py,
+  service/approval_service.py, view/approval_view.py,
+  controller/approval_controller.py, 관련 테스트) + Plan.md
+  `[Cycle 14][GREEN+REVIEW]` 커밋&푸쉬 승인 대기.
 
 **로드맵 추가(Cycle 14~15)** — 사용자가 이번 점검에서 나온 UX 갭 중 2건을 추가로
 진행하기로 결정:

@@ -1,5 +1,6 @@
 import math
 
+from sample_order_system.model.approval_preview import ApprovalPreview
 from sample_order_system.model.order import OrderStatus
 from sample_order_system.model.production_job import ProductionJob
 from sample_order_system.model.production_queue import ProductionQueue
@@ -28,6 +29,21 @@ class ApprovalService:
         order.status = OrderStatus.REJECTED
         self.order_repository.update(order)
 
+    def preview_approval(self, order_id: str) -> ApprovalPreview:
+        order = self._get_order_or_raise(order_id)
+        sample = self.sample_repository.get(order.sample_id)
+
+        if sample.stock >= order.quantity:
+            return ApprovalPreview(sufficient=True)
+
+        shortage_qty, actual_qty, total_time_min = self._calculate_shortage(order, sample)
+        return ApprovalPreview(
+            sufficient=False,
+            shortage_qty=shortage_qty,
+            actual_qty=actual_qty,
+            total_time_min=total_time_min,
+        )
+
     def approve_order(self, order_id: str) -> None:
         order = self._get_order_or_raise(order_id)
         sample = self.sample_repository.get(order.sample_id)
@@ -41,15 +57,21 @@ class ApprovalService:
         self.sample_repository.update(sample)
         self.order_repository.update(order)
 
-    def _enqueue_production_job(self, order, sample) -> None:
+    @staticmethod
+    def _calculate_shortage(order, sample) -> tuple[int, int, float]:
         shortage_qty = order.quantity - sample.stock
         actual_qty = math.ceil(shortage_qty / sample.yield_rate)
+        total_time_min = sample.avg_production_time * actual_qty
+        return shortage_qty, actual_qty, total_time_min
+
+    def _enqueue_production_job(self, order, sample) -> None:
+        shortage_qty, actual_qty, total_time_min = self._calculate_shortage(order, sample)
         job = ProductionJob(
             order_id=order.order_id,
             sample_id=sample.sample_id,
             shortage_qty=shortage_qty,
             actual_qty=actual_qty,
-            total_time_min=sample.avg_production_time * actual_qty,
+            total_time_min=total_time_min,
         )
         self.production_queue.enqueue(job)
         self.production_job_repository.create(job)

@@ -19,6 +19,14 @@ class ApprovalController:
 
         index = approval_view.get_target_order_index(len(pending))
         order = pending[index - 1]
+
+        try:
+            preview = self.approval_service.preview_approval(order.order_id)
+        except ValueError as e:
+            approval_view.show_error(str(e))
+            return
+        approval_view.show_approval_preview(preview)
+
         decision = approval_view.get_approve_or_reject()
 
         try:
