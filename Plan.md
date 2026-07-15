@@ -334,8 +334,38 @@
 - **리팩토링**: 코드 단순, 즉시 필요한 정리 없음.
 - **갭**: 이번 사이클은 발견된 갭 없음.
 - **REVIEW 후 테스트 재확인**: 전체 테스트 28 passed 유지. `ruff check` All checks passed.
-- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(service/shipment_service.py, 관련 테스트) +
-  Plan.md `[Cycle 6][GREEN+REVIEW]` 커밋&푸쉬 승인 대기.
+- **커밋 시점 2**: 완료 (`[Cycle 6][GREEN+REVIEW]`, commit 10161f4, 푸쉬 완료). Cycle 6 종료.
+
+## 진행 중 (Active)
+
+### Cycle 7 — RED: 모니터링 (상태별 집계, 재고상태 계산)
+
+- **목표(goal)**: 상태별 주문 건수(RESERVED/CONFIRMED/PRODUCING/RELEASE, REJECTED 제외)를
+  집계하고, 시료별 재고 상태(여유/부족/고갈)와 잔여율을 계산할 수 있다. 재고 상태는
+  대기수요(RESERVED+PRODUCING 주문 수량 합) 대비로 판단한다(PRD.md 4.5절 — PoC
+  ConsoleMVC의 고정 임계치 방식이 아니라 DataMonitor 방식으로 통일하기로 확정된 정책).
+- **범위(포함)**:
+  - `service/monitoring_service.py` 신규:
+    - `MonitoringService(sample_repository, order_repository)`
+    - `status_counts() -> dict`: RESERVED/CONFIRMED/PRODUCING/RELEASE 건수, REJECTED 제외
+    - `stock_states() -> list[dict]`: 시료별 sample_id/name/stock/pending_demand/state/ratio
+      - `고갈`: stock == 0 / `부족`: stock < pending_demand / `여유`: 그 외
+      - `ratio`: demand==0이면 1.0, 아니면 `min(1.0, stock/demand)`
+- **범위(제외)**: View/Controller(콘솔 출력 형식은 Cycle 8).
+- **테스트 계획** (`tests/service/test_monitoring_service.py`):
+  1. `test_상태별_주문_건수를_집계할_수_있다` (RESERVED/CONFIRMED/PRODUCING/RELEASE 각각
+     생성 + REJECTED 1건도 만들어 집계에서 제외되는지 함께 검증)
+  2. `test_재고가_0이면_고갈_상태이다`
+  3. `test_재고가_대기수요보다_적으면_부족_상태이다`
+  4. `test_재고가_대기수요_이상이면_여유_상태이다`
+  - `tmp_db_path` 픽스처 사용, mock 없음. 상태 조작은 `OrderRepository.update()`로 직접
+    설정(이미 검증된 저장소 API를 테스트 셋업에 사용, mock 아님).
+- **승인**: 완료 (사용자가 "Cycle 7 계획대로 진행해줘"로 승인).
+- **RED 검증**: `tests/service/test_monitoring_service.py`(4건 신규) 작성 후 실행 →
+  `ModuleNotFoundError: No module named 'sample_order_system.service.monitoring_service'`로
+  예상대로 실패. 기존 테스트 28건은 영향 없이 그대로 통과 — RED 확인됨.
+- **커밋 시점 1 대기 중**: `Plan.md` + `tests/service/test_monitoring_service.py` 커밋&푸쉬
+  승인 대기.
 
 ## 이력 (History)
 
