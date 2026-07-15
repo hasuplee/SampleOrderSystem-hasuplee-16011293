@@ -18,6 +18,15 @@ CREATE TABLE IF NOT EXISTS orders (
     status         TEXT NOT NULL,
     FOREIGN KEY (sample_id) REFERENCES samples (sample_id)
 );
+
+CREATE TABLE IF NOT EXISTS production_jobs (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id         TEXT NOT NULL UNIQUE,
+    sample_id        TEXT NOT NULL,
+    shortage_qty     INTEGER NOT NULL,
+    actual_qty       INTEGER NOT NULL,
+    total_time_min   REAL NOT NULL
+);
 """
 
 

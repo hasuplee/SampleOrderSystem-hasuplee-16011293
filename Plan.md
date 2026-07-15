@@ -591,8 +591,27 @@
   실행 → `ModuleNotFoundError: No module named
   'sample_order_system.repository.production_job_repository'`로 예상대로 실패.
   기존 테스트 37건은 영향 없이 그대로 통과 — RED 확인됨.
-- **커밋 시점 1 대기 중**: `Plan.md` + `tests/repository/test_production_job_repository.py`
-  커밋&푸쉬 승인 대기.
+- **커밋 시점 1**: 완료 (`[Cycle 9][RED]`, commit 694a536, 푸쉬 완료).
+
+### Cycle 9 — GREEN: 최소 구현
+
+- **구현**: `db/connection.py`에 `production_jobs` 테이블 추가(`id` 자동증가 PK로 등록순서
+  보존, `order_id UNIQUE`), `repository/production_job_repository.py` 신규
+  (`ProductionJobRepository.create/list_all/delete`).
+- **GREEN 검증**: 전체 스위트(`pytest`) → 40 passed (기존 37건 + 신규 3건).
+  `ruff check` → All checks passed.
+- **상태**: 완료. REVIEW 단계로 진행 예정 (커밋 없음).
+
+### Cycle 9 — REVIEW
+
+- **스코프 검토**: Plan.md 범위를 벗어난 구현 없음(ApprovalService/ProductionService/
+  main.py 연동은 손대지 않음, Cycle 10~12로 분리 유지).
+- **리팩토링**: 코드 단순, 즉시 필요한 정리 없음.
+- **갭**: 이번 사이클은 발견된 갭 없음.
+- **REVIEW 후 테스트 재확인**: 전체 테스트 40 passed 유지. `ruff check` All checks passed.
+- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(db/connection.py,
+  repository/production_job_repository.py, 관련 테스트) + Plan.md
+  `[Cycle 9][GREEN+REVIEW]` 커밋&푸쉬 승인 대기.
 
 ## 이력 (History)
 
