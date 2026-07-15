@@ -57,3 +57,14 @@ def test_이름으로_시료를_검색하면_부분일치하는_시료만_반환
     result = repo.search("실리콘")
 
     assert [s.sample_id for s in result] == ["S-001"]
+
+
+def test_시료_정보를_수정하면_저장된다(tmp_db_path):
+    repo = SampleRepository(tmp_db_path)
+    sample = _시료(sample_id="S-001", stock=100)
+    repo.create(sample)
+
+    sample.stock = 80
+    repo.update(sample)
+
+    assert repo.get("S-001").stock == 80

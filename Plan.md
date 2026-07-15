@@ -119,9 +119,46 @@
 - **참고**: `CLAUDE.md`/`COMMIT_CONVENTION.md`의 "커밋&푸쉬" 규칙 반영분이 아직 커밋되지 않은
   상태 — Cycle 2 REVIEW 커밋에 함께 포함할지 사람 파트너에게 확인 필요.
 - **REVIEW 후 테스트 재확인**: 전체 테스트 9 passed 유지.
-- **커밋 시점 2 대기 중**: GREEN 코드(model/order.py, db/connection.py,
-  repository/order_repository.py, service/order_service.py) + Plan.md
-  `[Cycle 2][GREEN+REVIEW]` 커밋&푸쉬 승인 대기.
+- **커밋 분리 결정**: 사람 파트너 지시로 문서 변경(커밋&푸쉬 규칙 반영)과 기능 구현을
+  커밋 2번(각각 `[DOCS]`, `[Cycle 2][GREEN+REVIEW]`) + 푸쉬 1번으로 분리 처리.
+- **커밋 시점 2**: 완료 (`[DOCS]` commit 99294cb, `[Cycle 2][GREEN+REVIEW]` commit 307cecd,
+  푸쉬 1회로 두 커밋 모두 반영). Cycle 2 종료.
+
+## 진행 중 (Active)
+
+### Cycle 3 — RED: 주문 승인/거절 + 재고충분 시 CONFIRMED 전환·차감
+
+- **목표(goal)**: RESERVED 주문을 거절하면 REJECTED로 전환된다. 승인 시 재고가 주문 수량
+  이상이면 즉시 CONFIRMED로 전환되고, 확정된 정책(PRD 4.4)에 따라 재고가 주문 수량만큼
+  차감된다. 재고 부족 케이스는 Cycle 4에서 다루므로 이번 사이클에서는 명시적으로
+  `NotImplementedError`를 발생시켜 미구현 상태를 드러낸다(조용히 잘못된 상태로 넘어가지
+  않도록 하는 경계 표시).
+- **범위(포함)**:
+  - `repository/sample_repository.py`에 `update(sample)` 추가 (재고 변경 저장)
+  - `repository/order_repository.py`에 `update(order)` 추가 (상태 변경 저장)
+  - `service/approval_service.py` 신규: `ApprovalService(sample_repo, order_repo)`
+    - `reject_order(order_id)`: 주문을 `REJECTED`로 전환
+    - `approve_order(order_id)`: 재고 충분 시 `CONFIRMED` 전환 + 재고 차감,
+      재고 부족 시 `NotImplementedError`
+- **범위(제외)**: 재고 부족 시 생산 큐 등록/실생산량 계산(Cycle 4), 생산완료 처리(Cycle 5),
+  출고 처리(Cycle 6), 모니터링(Cycle 7), View/Controller.
+- **테스트 계획**:
+  - `tests/repository/test_sample_repository.py` 추가: `test_시료_정보를_수정하면_저장된다`
+  - `tests/repository/test_order_repository.py` 추가: `test_주문_상태를_변경하면_저장된다`
+  - `tests/service/test_approval_service.py` 신규:
+    1. `test_주문을_거절하면_REJECTED_상태로_변경된다`
+    2. `test_재고가_충분하면_승인시_CONFIRMED_상태로_변경된다`
+    3. `test_재고가_충분하면_승인시_재고가_주문수량만큼_차감된다`
+    4. `test_재고가_부족하면_승인시_NotImplementedError가_발생한다`
+  - `tmp_db_path` 픽스처 사용, mock 없음.
+- **승인**: 완료 (사용자가 "Cycle 3 계획대로 진행해줘"로 승인).
+- **RED 검증**: 신규 테스트 6건(`test_시료_정보를_수정하면_저장된다`,
+  `test_주문_상태를_변경하면_저장된다`, `test_approval_service.py` 4건) 작성 후 실행 →
+  repository 2건은 `AttributeError: 'SampleRepository'/'OrderRepository' object has no
+  attribute 'update'`, service 4건은 `ModuleNotFoundError: No module named
+  'sample_order_system.service.approval_service'`로 예상대로 실패. 기존 8건은 그대로 통과 —
+  RED 확인됨.
+- **커밋 시점 1 대기 중**: `Plan.md` + 신규/수정 테스트 파일 커밋&푸쉬 승인 대기.
 
 ## 이력 (History)
 
