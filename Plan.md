@@ -38,7 +38,31 @@
   `ModuleNotFoundError: No module named 'sample_order_system.model.sample'`로 수집 단계에서
   실패. 오타가 아니라 `model/sample.py`, `repository/sample_repository.py`가 아직 존재하지
   않아서 발생하는 예상된 실패 — RED 확인됨.
-- **커밋 시점 1 대기 중**: `Plan.md` + `tests/repository/` 커밋 승인 대기.
+- **커밋 시점 1**: 완료 (`[Cycle 1][RED]`, commit 3ec14b9).
+
+### Cycle 1 — GREEN: 최소 구현
+
+- **구현**: `model/sample.py`(Sample 데이터클래스), `db/connection.py`(SQLite 연결 +
+  samples 테이블 스키마), `repository/sample_repository.py`(SampleRepository:
+  create/get/list_all/search, 중복 ID는 `ValueError`).
+- **범위 참고**: `search()`는 Plan의 테스트 요구사항(이름 부분일치)만 구현. PRD.md 4.2절은
+  ID 부분일치도 언급하나 RED 테스트 목록에 없어 이번 GREEN에는 포함하지 않음 — REVIEW에서
+  스코프로 다룸.
+- **GREEN 검증**: `pytest tests/repository/test_sample_repository.py -v` → 5 passed.
+  전체 스위트(`pytest`) → 5 passed(신규 5건 외 없음). `ruff check src tests` → All checks passed.
+- **상태**: 완료. REVIEW 단계로 진행 예정 (커밋 없음, GREEN 단계에서는 커밋하지 않음).
+
+### Cycle 1 — REVIEW
+
+- **스코프 검토**: Plan.md 범위를 벗어난 구현 없음.
+- **갭 발견**: PRD.md 4.2절(ID/이름 검색) 대비 `search()`가 이름만 지원. 스코프 크리프가
+  아니라 PRD 대비 부족한 기능이라 사람 파트너에게 확인 → **"백로그로 남기고 지금은 이름
+  검색만 유지"** 로 결정.
+- **수행 내용**: `PRD.md` 4.2절에 TODO(백로그) 항목으로 ID 검색 확장 계획 명시.
+- **리팩토링**: 없음 (코드 단순, REVIEW에서 즉시 필요한 정리 항목 없음).
+- **REVIEW 후 테스트 재확인**: 전체 테스트 5 passed 유지.
+- **커밋 시점 2 대기 중**: GREEN 코드(model/sample.py, db/, repository/sample_repository.py)
+  + PRD.md TODO 반영분 `[Cycle 1][GREEN+REVIEW]` 커밋 승인 대기.
 
 ## 이력 (History)
 
