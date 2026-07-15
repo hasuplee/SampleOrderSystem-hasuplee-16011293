@@ -183,9 +183,52 @@
 - **리팩토링**: `reject_order`/`approve_order` 공통 로직을 `_get_order_or_raise()`로 추출
   (중복 제거).
 - **REVIEW 후 테스트 재확인**: 전체 테스트 17 passed. `ruff check` All checks passed.
-- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(repository update 2건,
-  service/approval_service.py, 관련 테스트) + Plan.md `[Cycle 3][GREEN+REVIEW]` 커밋&푸쉬
-  승인 대기.
+- **커밋 시점 2**: 완료 (`[Cycle 3][GREEN+REVIEW]`, commit 97732a7, 푸쉬 완료). Cycle 3 종료.
+
+## 진행 중 (Active)
+
+### Cycle 4 — RED: 재고부족 시 생산 큐 등록 (실생산량/총생산시간 계산)
+
+- **목표(goal)**: 승인 시 재고가 부족하면 Cycle 3의 `NotImplementedError` 대신, 부족분에
+  대한 생산 작업(ProductionJob)이 FIFO 생산 큐에 등록되고 주문 상태가 `PRODUCING`으로
+  전환된다. 실생산량 = `ceil(부족분 / 수율)`, 총 생산시간 = 평균생산시간 × 실생산량
+  (PRD.md 4.4, 4.6절).
+- **아키텍처 참고사항**: 생산 큐는 PoC ConsoleMVC와 동일하게 프로세스 메모리 내 FIFO
+  큐(`ProductionQueue`)로 구현한다(콘솔 세션 동안만 유지). Sample/Order처럼 SQLite에
+  영속화하지 않음 — 이는 알려진 제한사항으로 PRD.md에 남기고, 필요 시 이후 사이클에서
+  재검토한다.
+- **범위(포함)**:
+  - `model/production_job.py`: `ProductionJob` 데이터클래스
+    (order_id, sample_id, shortage_qty, actual_qty, total_time_min)
+  - `model/production_queue.py`: `ProductionQueue` (enqueue/dequeue/peek/list_all, FIFO)
+  - `service/approval_service.py` 수정: 생성자에 `production_queue` 파라미터 추가.
+    `approve_order()`의 재고부족 분기를 `NotImplementedError`에서 실제 구현으로 교체
+    (부족분/실생산량/총생산시간 계산 → ProductionJob 생성 → 큐 등록 → 주문 `PRODUCING` 전환)
+- **범위(제외)**: 생산완료 처리(Cycle 5), 출고(Cycle 6), 모니터링(Cycle 7), View/Controller,
+  생산 큐 영속화.
+- **기존 테스트 변경 예정**: `tests/service/test_approval_service.py`의
+  `test_재고가_부족하면_승인시_NotImplementedError가_발생한다`는 이번 사이클에서 실제 동작
+  검증 테스트로 교체된다(자리표시자였던 Cycle 3 동작이 실제 구현으로 대체되므로). 기존
+  `ApprovalService(...)` 생성 호출부에 `production_queue` 인자 추가 필요.
+- **테스트 계획**:
+  - `tests/model/test_production_queue.py` 신규:
+    1. `test_생산_큐는_등록한_순서대로_작업을_반환한다` (FIFO)
+    2. `test_빈_생산_큐에서_dequeue하면_None을_반환한다`
+    3. `test_peek은_큐를_변경하지_않고_첫_작업을_반환한다`
+  - `tests/service/test_approval_service.py` 추가/교체:
+    4. `test_재고가_부족하면_승인시_생산_큐에_작업이_등록된다`
+       (shortage_qty/actual_qty(ceil)/total_time_min 값 검증)
+    5. `test_재고가_부족하면_승인시_주문_상태가_PRODUCING으로_변경된다`
+  - `tmp_db_path` 픽스처 사용, mock 없음.
+- **승인**: 완료 (사용자가 "Cycle 4 계획대로 진행해줘"로 승인).
+- **RED 검증**: `tests/model/test_production_queue.py`(3건 신규),
+  `tests/service/test_approval_service.py`(NotImplementedError 테스트 1건을 실제 동작
+  테스트 2건으로 교체, 헬퍼에 ProductionQueue 주입 추가) 작성 후 실행 →
+  `ModuleNotFoundError: No module named 'sample_order_system.model.production_job'`/
+  `'...production_queue'`로 수집 단계에서 예상대로 실패. 기존 repository/order_service
+  테스트 11건은 영향 없이 그대로 통과 — RED 확인됨.
+- **커밋 시점 1 대기 중**: `Plan.md` + `tests/model/`, `tests/service/test_approval_service.py`
+  커밋&푸쉬 승인 대기.
 
 ## 이력 (History)
 
