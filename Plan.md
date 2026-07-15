@@ -274,8 +274,25 @@
 - **RED 검증**: `tests/service/test_production_service.py`(4건 신규) 작성 후 실행 →
   `ModuleNotFoundError: No module named 'sample_order_system.service.production_service'`로
   예상대로 실패. 기존 테스트 21건은 영향 없이 그대로 통과 — RED 확인됨.
-- **커밋 시점 1 대기 중**: `Plan.md` + `tests/service/test_production_service.py` 커밋&푸쉬
-  승인 대기.
+- **커밋 시점 1**: 완료 (`[Cycle 5][RED]`, commit 58a4075, 푸쉬 완료).
+
+### Cycle 5 — GREEN: 최소 구현
+
+- **구현**: `service/production_service.py` 신규 (`ProductionService.complete_current_job()`
+  — 큐 dequeue, 없으면 ValueError, 시료 재고 += actual_qty 후 -= 주문수량, 주문 CONFIRMED
+  전환, 두 저장소 update).
+- **GREEN 검증**: 전체 스위트(`pytest`) → 25 passed (기존 21건 + 신규 4건).
+  `ruff check src tests` → All checks passed.
+- **상태**: 완료. REVIEW 단계로 진행 예정 (커밋 없음).
+
+### Cycle 5 — REVIEW
+
+- **스코프 검토**: Plan.md 범위를 벗어난 구현 없음.
+- **리팩토링**: 코드 단순, 즉시 필요한 정리 없음.
+- **갭**: 이번 사이클은 발견된 갭 없음.
+- **REVIEW 후 테스트 재확인**: 전체 테스트 25 passed 유지. `ruff check` All checks passed.
+- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(service/production_service.py, 관련 테스트) +
+  Plan.md `[Cycle 5][GREEN+REVIEW]` 커밋&푸쉬 승인 대기.
 
 ## 이력 (History)
 
