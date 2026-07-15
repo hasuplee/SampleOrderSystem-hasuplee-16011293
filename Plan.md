@@ -61,8 +61,47 @@
 - **수행 내용**: `PRD.md` 4.2절에 TODO(백로그) 항목으로 ID 검색 확장 계획 명시.
 - **리팩토링**: 없음 (코드 단순, REVIEW에서 즉시 필요한 정리 항목 없음).
 - **REVIEW 후 테스트 재확인**: 전체 테스트 5 passed 유지.
-- **커밋 시점 2 대기 중**: GREEN 코드(model/sample.py, db/, repository/sample_repository.py)
-  + PRD.md TODO 반영분 `[Cycle 1][GREEN+REVIEW]` 커밋 승인 대기.
+- **커밋 시점 2**: 완료 (`[Cycle 1][GREEN+REVIEW]`, commit ee60799). Cycle 1 종료.
+
+## 이력 (History) — 규칙 변경
+
+### [2026-07-15] 커밋 규칙 → "커밋&푸쉬"로 확장
+
+- **배경**: 사용자 지시. "커밋"이라고 되어 있던 기존 규칙(RED 종료/REVIEW 종료 시점, 승인 후
+  수행)은 그대로 유지하되, 커밋 직후 `origin main` 푸쉬까지 하도록 확장.
+- **수행 내용**: `CLAUDE.md`(Agentic Engineering 워크플로우 절, TDD 사이클 요약),
+  `COMMIT_CONVENTION.md`(상단 갱신 안내) 반영. 원격 `origin`(GitHub) 존재 확인 후,
+  아직 푸쉬되지 않았던 `ee60799`([Cycle 1][GREEN+REVIEW])까지 즉시 푸쉬 완료.
+- **상태**: 완료. 이후 모든 커밋 시점에 동일하게 적용.
+
+## 진행 중 (Active)
+
+### Cycle 2 — RED: 시료 주문(Order) 생성 + 시료 ID 존재 검증
+
+- **목표(goal)**: 고객이 등록된 시료로 주문하면 `RESERVED` 상태의 Order가 생성되고
+  `ORD-####` 형식으로 순차 채번된다. 등록되지 않은 시료 ID로는 주문할 수 없다.
+  (PRD.md 4.3절 — PoC ConsoleMVC의 "시료 ID 미검증" 결함 해소)
+- **범위(포함)**:
+  - `model/order.py`: `OrderStatus` Enum(RESERVED/REJECTED/PRODUCING/CONFIRMED/RELEASE),
+    `Order` 데이터클래스
+  - `db/connection.py`: `orders` 테이블 스키마 추가(samples FK)
+  - `repository/order_repository.py`: `OrderRepository.create/get/next_order_id`
+  - `service/order_service.py`: `OrderService(sample_repo, order_repo).create_order(sample_id,
+    customer_name, quantity)` — 시료 존재 검증 → 다음 주문 ID 채번 → RESERVED로 생성/저장
+- **범위(제외)**: 승인/거절, 재고 차감, 생산 큐, 출고, 콘솔 View/Controller — 이후 사이클.
+- **테스트 계획** (`tests/service/test_order_service.py`, `tests/repository/test_order_repository.py`):
+  1. `test_등록된_시료로_주문하면_RESERVED_상태로_생성된다`
+  2. `test_등록되지_않은_시료_ID로_주문하면_예외가_발생한다`
+  3. `test_주문_ID는_ORD_형식으로_순차_채번된다` (두 건 생성 시 ORD-0001, ORD-0002)
+  4. `test_생성된_주문을_조회하면_저장된_값과_동일하다`
+  - `tmp_db_path` 픽스처 사용, mock 없음. 시료는 `SampleRepository`로 사전 등록 후 사용.
+- **승인**: 완료 (사람 파트너 승인).
+- **RED 검증**: `tests/service/test_order_service.py`(3건), `tests/repository/test_order_repository.py`
+  (1건) 작성 후 실행 → `ModuleNotFoundError: No module named 'sample_order_system.model.order'`로
+  수집 단계에서 실패. `model/order.py`, `repository/order_repository.py`,
+  `service/order_service.py`가 아직 없어서 발생하는 예상된 실패 — RED 확인됨.
+- **커밋 시점 1 대기 중**: `Plan.md` + `tests/service/`, `tests/repository/test_order_repository.py`
+  커밋&푸쉬 승인 대기.
 
 ## 이력 (History)
 
