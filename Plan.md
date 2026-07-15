@@ -318,8 +318,24 @@
 - **RED 검증**: `tests/service/test_shipment_service.py`(3건 신규) 작성 후 실행 →
   `ModuleNotFoundError: No module named 'sample_order_system.service.shipment_service'`로
   예상대로 실패. 기존 테스트 25건은 영향 없이 그대로 통과 — RED 확인됨.
-- **커밋 시점 1 대기 중**: `Plan.md` + `tests/service/test_shipment_service.py` 커밋&푸쉬
-  승인 대기.
+- **커밋 시점 1**: 완료 (`[Cycle 6][RED]`, commit 397ea53, 푸쉬 완료).
+
+### Cycle 6 — GREEN: 최소 구현
+
+- **구현**: `service/shipment_service.py` 신규 (`ShipmentService.release_order()` — 존재
+  검증, CONFIRMED 상태 검증, RELEASE 전환).
+- **GREEN 검증**: 전체 스위트(`pytest`) → 28 passed (기존 25건 + 신규 3건).
+  `ruff check src tests` → All checks passed.
+- **상태**: 완료. REVIEW 단계로 진행 예정 (커밋 없음).
+
+### Cycle 6 — REVIEW
+
+- **스코프 검토**: Plan.md 범위를 벗어난 구현 없음.
+- **리팩토링**: 코드 단순, 즉시 필요한 정리 없음.
+- **갭**: 이번 사이클은 발견된 갭 없음.
+- **REVIEW 후 테스트 재확인**: 전체 테스트 28 passed 유지. `ruff check` All checks passed.
+- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(service/shipment_service.py, 관련 테스트) +
+  Plan.md `[Cycle 6][GREEN+REVIEW]` 커밋&푸쉬 승인 대기.
 
 ## 이력 (History)
 
