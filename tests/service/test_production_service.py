@@ -6,6 +6,7 @@ from sample_order_system.model.order import OrderStatus
 from sample_order_system.model.production_queue import ProductionQueue
 from sample_order_system.model.sample import Sample
 from sample_order_system.repository.order_repository import OrderRepository
+from sample_order_system.repository.production_job_repository import ProductionJobRepository
 from sample_order_system.repository.sample_repository import SampleRepository
 from sample_order_system.service.approval_service import ApprovalService
 from sample_order_system.service.order_service import OrderService
@@ -26,7 +27,8 @@ def _생산중인_주문_준비(tmp_db_path, stock=10, quantity=30, avg_producti
         sample_id="S-001", customer_name="삼성전자 파운드리", quantity=quantity,
     )
     queue = ProductionQueue()
-    ApprovalService(sample_repo, order_repo, queue).approve_order(order.order_id)
+    job_repo = ProductionJobRepository(tmp_db_path)
+    ApprovalService(sample_repo, order_repo, queue, job_repo).approve_order(order.order_id)
     return sample_repo, order_repo, queue, order
 
 

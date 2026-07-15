@@ -21,6 +21,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from sample_order_system.model.production_queue import ProductionQueue  # noqa: E402
 from sample_order_system.model.sample import Sample  # noqa: E402
 from sample_order_system.repository.order_repository import OrderRepository  # noqa: E402
+from sample_order_system.repository.production_job_repository import (  # noqa: E402
+    ProductionJobRepository,
+)
 from sample_order_system.repository.sample_repository import SampleRepository  # noqa: E402
 from sample_order_system.service.approval_service import ApprovalService  # noqa: E402
 from sample_order_system.service.order_service import OrderService  # noqa: E402
@@ -59,7 +62,10 @@ def main() -> None:
     sample_repository = SampleRepository(DB_PATH)
     order_repository = OrderRepository(DB_PATH)
     order_service = OrderService(sample_repository, order_repository)
-    approval_service = ApprovalService(sample_repository, order_repository, ProductionQueue())
+    approval_service = ApprovalService(
+        sample_repository, order_repository, ProductionQueue(),
+        ProductionJobRepository(DB_PATH),
+    )
 
     for sample_id, name, avg_production_time, yield_rate, stock in SAMPLES:
         sample_repository.create(Sample(

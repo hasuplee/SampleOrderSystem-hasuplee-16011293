@@ -4,6 +4,7 @@ from sample_order_system.model.order import OrderStatus
 from sample_order_system.model.production_queue import ProductionQueue
 from sample_order_system.model.sample import Sample
 from sample_order_system.repository.order_repository import OrderRepository
+from sample_order_system.repository.production_job_repository import ProductionJobRepository
 from sample_order_system.repository.sample_repository import SampleRepository
 from sample_order_system.service.approval_service import ApprovalService
 from sample_order_system.service.order_service import OrderService
@@ -28,7 +29,9 @@ def _주문_준비(tmp_db_path, stock=100, quantity=30):
 
 def test_CONFIRMED_주문을_출고처리하면_RELEASE_상태로_변경된다(tmp_db_path):
     sample_repo, order_repo, order = _주문_준비(tmp_db_path, stock=100, quantity=30)
-    ApprovalService(sample_repo, order_repo, ProductionQueue()).approve_order(order.order_id)
+    ApprovalService(
+        sample_repo, order_repo, ProductionQueue(), ProductionJobRepository(tmp_db_path),
+    ).approve_order(order.order_id)
     service = ShipmentService(order_repo)
 
     service.release_order(order.order_id)

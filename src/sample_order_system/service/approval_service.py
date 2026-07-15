@@ -4,6 +4,7 @@ from sample_order_system.model.order import OrderStatus
 from sample_order_system.model.production_job import ProductionJob
 from sample_order_system.model.production_queue import ProductionQueue
 from sample_order_system.repository.order_repository import OrderRepository
+from sample_order_system.repository.production_job_repository import ProductionJobRepository
 from sample_order_system.repository.sample_repository import SampleRepository
 
 
@@ -15,10 +16,12 @@ class ApprovalService:
         sample_repository: SampleRepository,
         order_repository: OrderRepository,
         production_queue: ProductionQueue,
+        production_job_repository: ProductionJobRepository,
     ):
         self.sample_repository = sample_repository
         self.order_repository = order_repository
         self.production_queue = production_queue
+        self.production_job_repository = production_job_repository
 
     def reject_order(self, order_id: str) -> None:
         order = self._get_order_or_raise(order_id)
@@ -49,6 +52,7 @@ class ApprovalService:
             total_time_min=sample.avg_production_time * actual_qty,
         )
         self.production_queue.enqueue(job)
+        self.production_job_repository.create(job)
         order.status = OrderStatus.PRODUCING
         self.order_repository.update(order)
 

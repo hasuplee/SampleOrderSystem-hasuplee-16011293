@@ -639,8 +639,30 @@
   기존 8건 모두 `TypeError: ApprovalService.__init__() takes 4 positional arguments
   but 5 were given`로 예상대로 실패(생성자 시그니처 변경 미반영). 다른 테스트 파일
   33건은 영향 없이 통과 — RED 확인됨.
-- **커밋 시점 1 대기 중**: `Plan.md` + `tests/service/test_approval_service.py` 커밋&푸쉬
-  승인 대기.
+- **커밋 시점 1**: 완료 (`[Cycle 10][RED]`, commit bcb4f02, 푸쉬 완료).
+
+### Cycle 10 — GREEN: 최소 구현
+
+- **구현**: `service/approval_service.py` 생성자에 `production_job_repository` 추가,
+  `_enqueue_production_job()`에서 `production_job_repository.create(job)` 호출 추가.
+  연쇄 수정: `main.py`(ProductionJobRepository 생성·주입),
+  `examples/seed_example_db.py`, `tests/service/test_production_service.py`,
+  `tests/service/test_shipment_service.py`의 `ApprovalService(...)` 호출부에
+  `production_job_repository` 인자 반영.
+- **GREEN 검증**: 전체 스위트(`pytest`) → 41 passed (기존 40건 + 신규 1건).
+  `ruff check` → All checks passed.
+- **상태**: 완료. REVIEW 단계로 진행 예정 (커밋 없음).
+
+### Cycle 10 — REVIEW
+
+- **스코프 검토**: Plan.md 범위를 벗어난 구현 없음(`ProductionService` 삭제 연동, 큐 복원은
+  손대지 않고 Cycle 11~12로 분리 유지).
+- **리팩토링**: 코드 단순, 즉시 필요한 정리 없음.
+- **갭**: 이번 사이클은 발견된 갭 없음.
+- **REVIEW 후 테스트 재확인**: 전체 테스트 41 passed 유지. `ruff check` All checks passed.
+- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(service/approval_service.py, main.py,
+  examples/seed_example_db.py, 관련 테스트) + Plan.md `[Cycle 10][GREEN+REVIEW]`
+  커밋&푸쉬 승인 대기.
 
 ## 이력 (History)
 
