@@ -660,9 +660,38 @@
 - **리팩토링**: 코드 단순, 즉시 필요한 정리 없음.
 - **갭**: 이번 사이클은 발견된 갭 없음.
 - **REVIEW 후 테스트 재확인**: 전체 테스트 41 passed 유지. `ruff check` All checks passed.
-- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(service/approval_service.py, main.py,
-  examples/seed_example_db.py, 관련 테스트) + Plan.md `[Cycle 10][GREEN+REVIEW]`
-  커밋&푸쉬 승인 대기.
+- **커밋 시점 2**: 완료 (`[Cycle 10][GREEN+REVIEW]`, commit 999934c, 푸쉬 완료).
+  Cycle 10 종료. `examples/example.db`는 여전히 이번 사이클과 무관한 로컬 변경 상태라
+  제외(다음에 정리 필요).
+
+## 진행 중 (Active)
+
+### Cycle 11 — RED: ProductionService가 생산완료 시 저장소에서도 작업 제거
+
+- **목표(goal)**: 생산완료 처리 시 인메모리 큐에서 작업을 제거하는 것과 함께
+  `ProductionJobRepository`에서도 해당 작업을 삭제한다(Cycle 9~10에 이은 저장소 연동
+  2단계).
+- **범위(포함)**:
+  - `service/production_service.py` 수정: 생성자에 `production_job_repository` 파라미터
+    추가. `complete_current_job()`에서 큐 dequeue 후
+    `production_job_repository.delete(job.order_id)` 호출.
+  - 기존 `tests/service/test_production_service.py`의 `ProductionService(...)` 호출부에
+    `production_job_repository` 인자 추가(인터페이스 변경에 따른 기존 테스트 수정).
+  - `main.py`의 `ProductionService(...)` 생성부에도 동일 인자 전달.
+- **범위(제외)**: 재시작 시 큐 복원(`restore_production_queue`, Cycle 12).
+- **테스트 계획** (`tests/service/test_production_service.py` 추가):
+  1. `test_생산완료_처리하면_저장소에서도_작업이_제거된다` —
+     완료 처리 후 `ProductionJobRepository.list_all()`이 빈 목록인지 확인
+  - `tmp_db_path` 픽스처 사용, mock 없음.
+- **승인**: 완료 (사용자가 "Cycle 11 계획대로 진행해줘"로 승인).
+- **RED 검증**: `tests/service/test_production_service.py`의 헬퍼가 `job_repo`도
+  반환하도록 수정, 기존 4건 호출부에 `job_repo` 인자 추가,
+  `test_생산완료_처리하면_저장소에서도_작업이_제거된다` 신규 추가 후 실행 → 5건 모두
+  `TypeError: ProductionService.__init__() takes 4 positional arguments but 5 were given`
+  로 예상대로 실패(생성자 시그니처 변경 미반영). 다른 테스트 파일 37건은 영향 없이 통과
+  — RED 확인됨.
+- **커밋 시점 1 대기 중**: `Plan.md` + `tests/service/test_production_service.py` 커밋&푸쉬
+  승인 대기.
 
 ## 이력 (History)
 
