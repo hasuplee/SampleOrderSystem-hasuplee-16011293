@@ -11,7 +11,34 @@
 
 ## 진행 중 (Active)
 
-_현재 진행 중인 액션 없음. Cycle 0 완료, 커밋 승인 대기 중._
+### Cycle 1 — RED: Sample 모델 + SampleRepository
+
+- **목표(goal)**: 시료(Sample)를 SQLite에 등록·조회·검색할 수 있다. 중복 ID 등록은 거부된다.
+  (PRD.md 4.2절, 5절, 7절의 "시료 ID 유일성" 요구사항 충족)
+- **범위(포함)**:
+  - `model/sample.py`: `Sample` 데이터클래스 (sample_id, name, avg_production_time,
+    yield_rate, stock=0)
+  - `db/connection.py`: SQLite 연결 + `samples` 테이블 스키마 초기화
+    (DataPersistence PoC 패턴 계승)
+  - `repository/sample_repository.py`: `SampleRepository.create/get/list_all/search`
+- **범위(제외, 이번 사이클에 하지 않음)**:
+  - `update`/`delete` (재고 차감 등 향후 사이클에서 필요해지면 그때 추가 — YAGNI)
+  - Order/ProductionJob 관련 일체
+  - 콘솔 View/Controller 연동
+- **테스트 계획** (`tests/repository/test_sample_repository.py`):
+  1. `test_시료를_등록하면_저장된다` — create() 후 get()으로 조회하면 동일한 필드값 반환
+  2. `test_존재하지_않는_시료_ID를_조회하면_None을_반환한다`
+  3. `test_중복된_시료_ID로_등록하면_예외가_발생한다`
+  4. `test_등록된_시료_목록을_조회할_수_있다` — list_all()이 등록 순서대로(또는 ID 순) 반환
+  5. `test_이름으로_시료를_검색하면_부분일치하는_시료만_반환된다`
+  - 모든 테스트는 `tmp_db_path` 픽스처(tests/conftest.py)로 격리된 SQLite 파일 사용, mock 없음.
+- **승인**: 완료 (사람 파트너 승인).
+- **RED 검증**: `tests/repository/test_sample_repository.py` 5개 테스트 작성 후
+  `pytest tests/repository/test_sample_repository.py -v` 실행 →
+  `ModuleNotFoundError: No module named 'sample_order_system.model.sample'`로 수집 단계에서
+  실패. 오타가 아니라 `model/sample.py`, `repository/sample_repository.py`가 아직 존재하지
+  않아서 발생하는 예상된 실패 — RED 확인됨.
+- **커밋 시점 1 대기 중**: `Plan.md` + `tests/repository/` 커밋 승인 대기.
 
 ## 이력 (History)
 
