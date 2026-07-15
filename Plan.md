@@ -888,10 +888,36 @@
 - **리팩토링**: GREEN 단계에서 이미 반영 완료, 추가 필요 없음.
 - **갭**: 이번 사이클은 발견된 갭 없음.
 - **REVIEW 후 테스트 재확인**: 전체 테스트 49 passed 유지. `ruff check` All checks passed.
-- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(model/approval_preview.py,
-  service/approval_service.py, view/approval_view.py,
-  controller/approval_controller.py, 관련 테스트) + Plan.md
-  `[Cycle 14][GREEN+REVIEW]` 커밋&푸쉬 승인 대기.
+- **커밋 시점 2**: 완료 (`[Cycle 14][GREEN+REVIEW]`, commit 3029135, 푸쉬 완료).
+  Cycle 14 종료.
+
+## 진행 중 (Active)
+
+### Cycle 15 — RED: 주문/출고 목록에 시료명 표시
+
+- **목표(goal)**: 승인/거절 대기 목록과 출고 가능 목록에 시료 ID 대신 시료명을 함께
+  보여준다(PDF 예시 화면은 "실리콘 웨이퍼-8인치" 같은 시료명을 표시하는데, 우리는
+  `S-001` 같은 ID만 표시하고 있었음).
+- **범위(포함)**:
+  - `service/order_display.py` 신규: `resolve_sample_names(orders, sample_repository)
+    -> list[dict]` — `Order` 목록을 `SampleRepository`와 조인해
+    `{order_id, customer_name, sample_name, quantity}` 딕셔너리 목록으로 변환하는 순수
+    조합 함수(부수효과 없음, 이미 검증된 저장소 API만 사용).
+  - `view/order_list_view.py` 수정: `show_order_list()`가 `Order` 객체 대신 위 딕셔너리
+    목록을 받아 `시료명`을 출력하도록 변경.
+  - `controller/approval_controller.py`, `controller/shipment_controller.py` 수정:
+    표시 직전 `resolve_sample_names()` 호출.
+- **범위(제외)**: 없음 — 이번 사이클로 이번 점검에서 나온 항목(Cycle 13~15) 전체 종료.
+- **테스트 계획** (`tests/service/test_order_display.py`):
+  1. `test_주문_목록을_변환하면_시료명이_포함된다` — 시료를 등록하고 그 시료를 참조하는
+     주문 목록을 넘기면 각 항목에 올바른 시료명이 채워지는지 확인.
+  - `tmp_db_path` 픽스처 사용, mock 없음.
+- **승인**: 완료 (사용자가 "Cycle 15 계획대로 진행해줘"로 승인).
+- **RED 검증**: `tests/service/test_order_display.py`(1건 신규) 작성 후 실행 →
+  `ModuleNotFoundError: No module named 'sample_order_system.service.order_display'`로
+  예상대로 실패. 기존 테스트 49건은 영향 없이 그대로 통과 — RED 확인됨.
+- **커밋 시점 1 대기 중**: `Plan.md` + `tests/service/test_order_display.py` 커밋&푸쉬
+  승인 대기.
 
 **로드맵 추가(Cycle 14~15)** — 사용자가 이번 점검에서 나온 UX 갭 중 2건을 추가로
 진행하기로 결정:
