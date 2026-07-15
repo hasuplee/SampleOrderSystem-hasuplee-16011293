@@ -291,8 +291,35 @@
 - **리팩토링**: 코드 단순, 즉시 필요한 정리 없음.
 - **갭**: 이번 사이클은 발견된 갭 없음.
 - **REVIEW 후 테스트 재확인**: 전체 테스트 25 passed 유지. `ruff check` All checks passed.
-- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(service/production_service.py, 관련 테스트) +
-  Plan.md `[Cycle 5][GREEN+REVIEW]` 커밋&푸쉬 승인 대기.
+- **커밋 시점 2**: 완료 (`[Cycle 5][GREEN+REVIEW]`, commit dff6a8f, 푸쉬 완료). Cycle 5 종료.
+
+## 진행 중 (Active)
+
+### Cycle 6 — RED: 출고 처리 (CONFIRMED → RELEASE)
+
+- **목표(goal)**: CONFIRMED 상태 주문을 출고 처리하면 `RELEASE`로 전환된다. 재고는 이미
+  CONFIRMED 전환 시점에 차감되었으므로(Cycle 3/5) 출고 시점에는 추가로 변경하지 않는다
+  (PRD.md 4.7절).
+- **범위(포함)**:
+  - `service/shipment_service.py` 신규: `ShipmentService(order_repository).release_order(
+    order_id)`
+    - 존재하지 않는 주문 → `ValueError`
+    - `CONFIRMED`가 아닌 주문(예: RESERVED, PRODUCING, REJECTED, 이미 RELEASE) → `ValueError`
+      (승인/거절 사이클에서 이미 확립한 "잘못된 상태 전이는 명확한 예외로 막는다" 패턴을
+      동일하게 적용)
+    - 정상 시 상태를 `RELEASE`로 전환하고 저장
+- **범위(제외)**: 모니터링(Cycle 7), View/Controller.
+- **테스트 계획** (`tests/service/test_shipment_service.py`):
+  1. `test_CONFIRMED_주문을_출고처리하면_RELEASE_상태로_변경된다`
+  2. `test_존재하지_않는_주문을_출고처리하면_예외가_발생한다`
+  3. `test_CONFIRMED가_아닌_주문을_출고처리하면_예외가_발생한다`
+  - `tmp_db_path` 픽스처 사용, mock 없음.
+- **승인**: 완료 (사용자가 "Cycle 6 계획대로 진행해줘"로 승인).
+- **RED 검증**: `tests/service/test_shipment_service.py`(3건 신규) 작성 후 실행 →
+  `ModuleNotFoundError: No module named 'sample_order_system.service.shipment_service'`로
+  예상대로 실패. 기존 테스트 25건은 영향 없이 그대로 통과 — RED 확인됨.
+- **커밋 시점 1 대기 중**: `Plan.md` + `tests/service/test_shipment_service.py` 커밋&푸쉬
+  승인 대기.
 
 ## 이력 (History)
 
