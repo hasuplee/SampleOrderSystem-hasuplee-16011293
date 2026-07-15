@@ -710,8 +710,37 @@
 - **리팩토링**: 코드 단순, 즉시 필요한 정리 없음.
 - **갭**: 이번 사이클은 발견된 갭 없음.
 - **REVIEW 후 테스트 재확인**: 전체 테스트 42 passed 유지. `ruff check` All checks passed.
-- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(service/production_service.py, main.py,
-  관련 테스트) + Plan.md `[Cycle 11][GREEN+REVIEW]` 커밋&푸쉬 승인 대기.
+- **커밋 시점 2**: 완료 (`[Cycle 11][GREEN+REVIEW]`, commit 14315ba, 푸쉬 완료).
+  Cycle 11 종료.
+
+## 진행 중 (Active)
+
+### Cycle 12 — RED: 재시작 시 저장소→큐 복원 + main.py 배선
+
+- **목표(goal)**: 프로그램을 재시작해도 `ProductionJobRepository`에 남아있는 생산 작업이
+  `ProductionQueue`로 복원되어, 이전 세션에서 `PRODUCING`으로 남은 주문을 계속 생산완료
+  처리할 수 있다. 이번 사이클로 사용자가 처음 발견한 버그(재시작 시 생산라인 조회가
+  안 되던 문제)가 최종적으로 해소된다.
+- **범위(포함)**:
+  - `service/production_recovery.py` 신규: `restore_production_queue(production_job_repository,
+    production_queue) -> None` — 저장소에 남은 작업을 등록 순서(FIFO)대로 큐에 적재.
+  - `main.py` 수정: 서비스 조립 직후 `restore_production_queue(production_job_repository,
+    production_queue)` 호출.
+- **범위(제외)**: 없음 — 이번 사이클로 로드맵(Cycle 9~12) 종료.
+- **테스트 계획** (`tests/service/test_production_recovery.py`):
+  1. `test_저장소에_남아있는_생산_작업을_큐로_복원한다` — 저장소에 직접 작업 2건을 등록 후
+     복원하면 큐에 등록 순서(FIFO)대로 들어있는지 확인
+  2. `test_저장소가_비어있으면_큐는_비어있는_상태로_유지된다`
+  - `tmp_db_path` 픽스처 사용, mock 없음.
+- **수동 재검증 계획**: GREEN 완료 후, 앞서 사용자가 발견한 버그 재현 시나리오
+  (세션A에서 승인→PRODUCING, 종료 후 세션B에서 생산라인 조회)를 다시 실행해 이번엔
+  정상적으로 현재 작업이 보이는지 확인.
+- **승인**: 완료 (사용자가 "Cycle 12 계획대로 진행해줘"로 승인).
+- **RED 검증**: `tests/service/test_production_recovery.py`(2건 신규) 작성 후 실행 →
+  `ModuleNotFoundError: No module named 'sample_order_system.service.production_recovery'`
+  로 예상대로 실패. 기존 테스트 42건은 영향 없이 그대로 통과 — RED 확인됨.
+- **커밋 시점 1 대기 중**: `Plan.md` + `tests/service/test_production_recovery.py` 커밋&푸쉬
+  승인 대기.
 
 ## 이력 (History)
 
