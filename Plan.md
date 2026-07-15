@@ -833,8 +833,39 @@
 - **리팩토링**: 코드 단순, 즉시 필요한 정리 없음.
 - **갭**: 이번 사이클은 발견된 갭 없음.
 - **REVIEW 후 테스트 재확인**: 전체 테스트 47 passed 유지. `ruff check` All checks passed.
-- **커밋 시점 2 대기 중**: GREEN+REVIEW 코드(repository/sample_repository.py, 관련 테스트)
-  + Plan.md `[Cycle 13][GREEN+REVIEW]` 커밋&푸쉬 승인 대기.
+- **커밋 시점 2**: 완료 (`[Cycle 13][GREEN+REVIEW]`, commit 3a9fbba, 푸쉬 완료).
+  Cycle 13 종료. `examples/example.db`는 여전히 이번 사이클과 무관한 로컬 변경 상태라
+  제외(다음에 정리 필요). 이후 시드 스크립트로 재생성해 초기 상태로 정리 완료.
+
+## 진행 중 (Active)
+
+### Cycle 14 — RED: 승인 시 재고 확인 미리보기
+
+- **목표(goal)**: 주문 승인 흐름에서 Y/N을 묻기 전에 재고 확인 결과(재고 충분 여부,
+  부족 시 부족분/실생산량/총생산시간)를 먼저 보여준다(PDF 슬라이드17의 "재고 확인 중...
+  → 정보 표시 → Y/N" 흐름 재현).
+- **범위(포함)**:
+  - `model/approval_preview.py` 신규: `ApprovalPreview` 데이터클래스
+    (`sufficient: bool`, `shortage_qty: int = 0`, `actual_qty: int = 0`,
+    `total_time_min: float = 0.0`)
+  - `service/approval_service.py`에 `preview_approval(order_id) -> ApprovalPreview` 추가
+    — 커밋 없이(부수효과 없이) 재고 충분 여부와 부족 시 예상 실생산량/총생산시간을
+    계산만 해서 반환. 기존 `_enqueue_production_job()`의 계산 로직과 중복되지 않도록
+    공통 계산 부분을 추출(REVIEW에서 정리).
+  - `controller/approval_controller.py`/`view/approval_view.py` 수정: 주문 선택 직후
+    `preview_approval()` 호출 → 결과 표시(`show_approval_preview`) → 그다음 Y/N.
+- **범위(제외)**: 시료명 표시(Cycle 15).
+- **테스트 계획** (`tests/service/test_approval_service.py` 추가):
+  1. `test_재고가_충분하면_미리보기는_sufficient가_True다`
+  2. `test_재고가_부족하면_미리보기에_부족분과_실생산량이_계산되어_있다`
+  - `tmp_db_path` 픽스처 사용, mock 없음. `preview_approval()` 호출 자체는 부수효과가
+    없어야 하므로(재고/주문 상태 변경 없음), 테스트에서 호출 후 상태 불변도 함께 확인.
+- **승인**: 완료 (사용자가 "Cycle 14 계획대로 진행해줘"로 승인).
+- **RED 검증**: `tests/service/test_approval_service.py`에 2건 신규 작성 후 실행 → 2건
+  모두 `AttributeError: 'ApprovalService' object has no attribute 'preview_approval'`로
+  예상대로 실패. 기존 8건은 그대로 통과 — RED 확인됨.
+- **커밋 시점 1 대기 중**: `Plan.md` + `tests/service/test_approval_service.py` 커밋&푸쉬
+  승인 대기.
 
 **로드맵 추가(Cycle 14~15)** — 사용자가 이번 점검에서 나온 UX 갭 중 2건을 추가로
 진행하기로 결정:
