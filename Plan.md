@@ -464,9 +464,22 @@
   - `approval_view.py`, `shipment_view.py`가 위 공통 헬퍼를 사용하도록 축약
 - **REVIEW 후 재검증**: 전체 테스트 37 passed 유지, `ruff check` All checks passed.
   리팩토링 이후 승인→출고 콘솔 흐름을 다시 수동 실행해 정상 동작 재확인.
-- **커밋 시점 2 대기 중**: GREEN+REVIEW 전체(view/, controller/, main.py, src의
-  sample_order_system/main.py, 관련 테스트) + Plan.md `[Cycle 8][GREEN+REVIEW]` 커밋&푸쉬
-  승인 대기.
+- **커밋 시점 2**: 완료 (`[Cycle 8][GREEN+REVIEW]`, commit 392791f, 푸쉬 완료). Cycle 8 종료.
+  **로드맵 8개 사이클 전체 완료.**
+
+## 진행 중 (Active)
+
+### README.md 작성
+
+- **목표**: 프로젝트 소개, 설치(개발 의존성 포함), 실행 방법(`python main.py [--db]`),
+  테스트 실행 방법(`pytest`), 프로젝트 구조, 메인 메뉴 사용법을 담은 README.md 신규 작성.
+- **TDD 해당 없음**: 문서 작성이므로 SKILL.md의 "설정 파일/문서" 예외에 해당. RED/GREEN
+  구분 없이 단일 작업으로 진행.
+- **커밋**: 작성 완료 후 사람 파트너 승인 받아 `[DOCS]` 커밋&푸쉬.
+- **상태**: 완료. `README.md` 신규 작성(소개, 설치, 실행 방법 `--db` 옵션 포함, 메인 메뉴
+  사용 흐름, 테스트/린트 명령, 프로젝트 구조, 데이터 영속성 관련 알려진 제한사항).
+- **커밋**: 완료. 사람 파트너 지시로 `README.md`만 먼저 `[DOCS]` 커밋(789067f)&푸쉬,
+  `Plan.md`는 별도 커밋으로 뒤이어 반영.
 
 ## 이력 (History)
 
